@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
 
 const sections = [
-  { name: "Errands", emoji: "🏃", color: "bg-amber-500/15 text-amber-200" },
-  { name: "Marketplace", emoji: "🛍️", color: "bg-emerald-500/15 text-emerald-200" },
-  { name: "Wallet", emoji: "💳", color: "bg-sky-500/15 text-sky-200" },
-  { name: "Profile", emoji: "👤", color: "bg-purple-500/15 text-purple-200" },
+  { name: "Errands", emoji: "🏃" },
+  { name: "Marketplace", emoji: "🛍️" },
+  { name: "Wallet", emoji: "💳" },
+  { name: "Profile", emoji: "👤" },
 ];
 
 const placeholderPosts = [
@@ -15,24 +15,35 @@ const placeholderPosts = [
     author: "Campus Events",
     time: "2h ago",
     content: "Reminder: Career fair this Friday at the main hall, 10am–4pm. Bring your resume!",
+    likes: 24,
+    comments: 5,
   },
   {
     id: 2,
     author: "Amaka O.",
     time: "4h ago",
     content: "Selling a barely-used mini fridge, moving out this weekend. Check the marketplace 🛍️",
+    likes: 12,
+    comments: 3,
   },
   {
     id: 3,
     author: "Uni.hub",
     time: "1d ago",
     content: "Welcome to Uni.hub! This is where your campus comes together — errands, marketplace, and more.",
+    likes: 41,
+    comments: 8,
   },
 ];
+
+function initials(email) {
+  return email ? email.charAt(0).toUpperCase() : "U";
+}
 
 export default function Home() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -49,52 +60,83 @@ export default function Home() {
     navigate("/");
   }
 
+  const bg = dark ? "bg-[#0B1D3A]" : "bg-[#F0F2F5]";
+  const headerBg = dark ? "bg-[#13294B]" : "bg-white";
+  const cardBg = dark ? "bg-[#13294B]" : "bg-white";
+  const textMain = dark ? "text-[#F6F5F1]" : "text-[#050505]";
+  const textSub = dark ? "text-[#F6F5F1]/50" : "text-[#65676B]";
+  const border = dark ? "border-[#F6F5F1]/10" : "border-[#E4E6EB]";
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0B1D3A] to-[#13294B]">
+    <div className={`min-h-screen ${bg}`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[#F6F5F1]/10">
-        <div>
-          <h1 className="text-lg font-bold text-[#F6F5F1]">Uni.hub</h1>
-          <p className="text-xs text-[#F6F5F1]/50">{email}</p>
+      <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 ${headerBg} border-b ${border} shadow-sm`}>
+        <h1 className="text-xl font-extrabold text-[#0B1D3A] tracking-tight" style={dark ? { color: "#F6F5F1" } : {}}>
+          Uni.hub
+        </h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setDark(!dark)}
+            className={`text-xs rounded-full px-3 py-2 border ${border} ${textMain}`}
+          >
+            {dark ? "☀️" : "🌙"}
+          </button>
+          <button
+            onClick={handleLogout}
+            className={`text-xs rounded-full px-3 py-2 border ${border} ${textMain}`}
+          >
+            Log Out
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          className="text-xs rounded-lg bg-[#F6F5F1]/10 border border-[#F6F5F1]/20 text-[#F6F5F1] px-3 py-2"
-        >
-          Log Out
-        </button>
       </div>
 
       {/* Section shortcuts */}
-      <div className="grid grid-cols-4 gap-3 px-5 py-5">
-        {sections.map((s) => (
-          <button
-            key={s.name}
-            className="flex flex-col items-center gap-1.5"
-          >
-            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-xl ${s.color}`}>
-              {s.emoji}
-            </div>
-            <span className="text-[11px] text-[#F6F5F1]/70">{s.name}</span>
-          </button>
-        ))}
+      <div className={`${cardBg} border-b ${border} px-4 py-4`}>
+        <div className="grid grid-cols-4 gap-2">
+          {sections.map((s) => (
+            <button key={s.name} className="flex flex-col items-center gap-1.5">
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center text-xl ${dark ? "bg-[#F6F5F1]/10" : "bg-[#F0F2F5]"}`}>
+                {s.emoji}
+              </div>
+              <span className={`text-[11px] ${textSub}`}>{s.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Feed */}
-      <div className="px-5 pb-10 space-y-3">
-        <h2 className="text-sm font-semibold text-[#F6F5F1]/60 uppercase tracking-wide mb-1">
-          Campus Feed
-        </h2>
+      <div className="max-w-lg mx-auto px-3 py-4 space-y-3">
+        {/* Composer */}
+        <div className={`${cardBg} border ${border} rounded-lg p-3 flex items-center gap-3 shadow-sm`}>
+          <div className="h-9 w-9 rounded-full bg-[#0B1D3A] text-[#F6F5F1] flex items-center justify-center text-sm font-bold shrink-0">
+            {initials(email)}
+          </div>
+          <div className={`flex-1 rounded-full px-4 py-2 text-sm ${textSub} ${dark ? "bg-[#F6F5F1]/10" : "bg-[#F0F2F5]"}`}>
+            What's happening on campus?
+          </div>
+        </div>
+
+        {/* Posts */}
         {placeholderPosts.map((post) => (
-          <div
-            key={post.id}
-            className="rounded-xl bg-[#F6F5F1]/5 border border-[#F6F5F1]/10 p-4"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-[#F6F5F1]">{post.author}</span>
-              <span className="text-xs text-[#F6F5F1]/40">{post.time}</span>
+          <div key={post.id} className={`${cardBg} border ${border} rounded-lg shadow-sm overflow-hidden`}>
+            <div className="flex items-center gap-3 px-4 pt-3 pb-2">
+              <div className="h-10 w-10 rounded-full bg-[#0B1D3A] text-[#F6F5F1] flex items-center justify-center text-sm font-bold shrink-0">
+                {post.author.charAt(0)}
+              </div>
+              <div>
+                <p className={`text-sm font-semibold ${textMain}`}>{post.author}</p>
+                <p className={`text-xs ${textSub}`}>{post.time}</p>
+              </div>
             </div>
-            <p className="text-sm text-[#F6F5F1]/80 leading-relaxed">{post.content}</p>
+            <p className={`px-4 pb-3 text-sm leading-relaxed ${textMain}`}>{post.content}</p>
+            <div className={`flex items-center justify-between px-4 py-2 text-xs ${textSub} border-t ${border}`}>
+              <span>👍 {post.likes} likes</span>
+              <span>{post.comments} comments</span>
+            </div>
+            <div className={`flex border-t ${border}`}>
+              <button className={`flex-1 py-2 text-sm font-semibold ${textSub}`}>👍 Like</button>
+              <button className={`flex-1 py-2 text-sm font-semibold ${textSub} border-l ${border}`}>💬 Comment</button>
+            </div>
           </div>
         ))}
       </div>
