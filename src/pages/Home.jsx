@@ -9,41 +9,29 @@ const sections = [
   { name: "Profile", emoji: "👤" },
 ];
 
-const placeholderPosts = [
-  {
-    id: 1,
-    author: "Campus Events",
-    time: "2h ago",
-    content: "Reminder: Career fair this Friday at the main hall, 10am–4pm. Bring your resume!",
-    likes: 24,
-    comments: 5,
-  },
-  {
-    id: 2,
-    author: "Amaka O.",
-    time: "4h ago",
-    content: "Selling a barely-used mini fridge, moving out this weekend. Check the marketplace 🛍️",
-    likes: 12,
-    comments: 3,
-  },
-  {
-    id: 3,
-    author: "Uni.hub",
-    time: "1d ago",
-    content: "Welcome to Uni.hub! This is where your campus comes together — errands, marketplace, and more.",
-    likes: 41,
-    comments: 8,
-  },
-];
-
 function initials(email) {
   return email ? email.charAt(0).toUpperCase() : "U";
+}
+
+function timeAgo(dateString) {
+  const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
 
 export default function Home() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [dark, setDark] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [newPost, setNewPost] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [showComposer, setShowComposer] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -53,7 +41,36 @@ export default function Home() {
         setEmail(data.user.email);
       }
     });
+    fetchPosts();
   }, [navigate]);
+
+  async function fetchPosts() {
+    const { data } = await supabase
+      .from("posts")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setPosts(data || []);
+  }
+
+  async function handlePost() {
+    if (!newPost.trim()) return;
+    setPosting(true);
+
+    const { data: userData } = await supabase.auth.getUser();
+
+    const { error } = await supabase.from("posts").insert({
+      user_id: userData.user.id,
+      content: newPost.trim(),
+    });
+
+    setPosting(false);
+
+    if (!error) {
+      setNewPost("");
+      setShowComposer(false);
+      fetchPosts();
+    }
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -77,16 +94,10 @@ export default function Home() {
           Uni.hub
         </h1>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setDark(!dark)}
-            className={`text-xs rounded-full px-3 py-2 border ${border} ${textMain}`}
-          >
+          <button onClick={() => setDark(!dark)} className={`text-xs rounded-full px-3 py-2 border ${border} ${textMain}`}>
             {dark ? "☀️" : "🌙"}
           </button>
-          <button
-            onClick={handleLogout}
-            className={`text-xs rounded-full px-3 py-2 border ${border} ${textMain}`}
-          >
+          <button onClick={handleLogout} className={`text-xs rounded-full px-3 py-2 border ${border} ${textMain}`}>
             Log Out
           </button>
         </div>
@@ -109,32 +120,68 @@ export default function Home() {
       {/* Feed */}
       <div className="max-w-lg mx-auto px-3 py-4 space-y-3">
         {/* Composer */}
-        <div className={`${cardBg} border ${border} rounded-lg p-3 flex items-center gap-3 shadow-sm`}>
-          <div className="h-9 w-9 rounded-full bg-[#0B1D3A] text-[#F6F5F1] flex items-center justify-center text-sm font-bold shrink-0">
-            {initials(email)}
+        <div className={`${cardBg} border ${border} rounded-lg p-3 shadow-sm`}>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-[#0B1D3A] text-[#F6F5F1] flex items-center justify-center text-sm font-bold shrink-0">
+              {initials(email)}
+            </div>
+            {!showComposer ? (
+              <button
+                onClick={() => setShowComposer(true)}
+                className={`flex-1 text-left rounded-full px-4 py-2 text-sm ${textSub} ${composerBg}`}
+              >
+                What's happening on campus?
+              </button>
+            ) : (
+              <textarea
+                autoFocus
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
+                placeholder="What's happening on campus?"
+                className={`flex-1 rounded-lg px-3 py-2 text-sm ${textMain} ${composerBg} outline-none resize-none`}
+                rows={3}
+              />
+            )}
           </div>
-          <div className={`flex-1 rounded-full px-4 py-2 text-sm ${textSub} ${composerBg}`}>
-            What's happening on campus?
-          </div>
+          {showComposer && (
+            <div className="flex justify-end gap-2 mt-2">
+              <button
+                onClick={() => { setShowComposer(false); setNewPost(""); }}
+                className={`text-xs px-3 py-2 rounded-lg ${textSub}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePost}
+                disabled={posting || !newPost.trim()}
+                className="text-xs px-4 py-2 rounded-lg bg-[#0B1D3A] text-[#F6F5F1] font-semibold disabled:opacity-50"
+              >
+                {posting ? "Posting..." : "Post"}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Posts */}
-        {placeholderPosts.map((post) => (
+        {posts.length === 0 && (
+          <p className={`text-center text-sm ${textSub} py-8`}>
+            No posts yet — be the first to share something!
+          </p>
+        )}
+        {posts.map((post) => (
           <div key={post.id} className={`${cardBg} border ${border} rounded-lg shadow-sm overflow-hidden`}>
             <div className="flex items-center gap-3 px-4 pt-3 pb-2">
               <div className="h-10 w-10 rounded-full bg-[#0B1D3A] text-[#F6F5F1] flex items-center justify-center text-sm font-bold shrink-0">
-                {post.author.charAt(0)}
+                {post.user_id === email ? initials(email) : "U"}
               </div>
               <div>
-                <p className={`text-sm font-semibold ${textMain}`}>{post.author}</p>
-                <p className={`text-xs ${textSub}`}>{post.time}</p>
+                <p className={`text-sm font-semibold ${textMain}`}>
+                  {post.user_id ? "Student" : "Unknown"}
+                </p>
+                <p className={`text-xs ${textSub}`}>{timeAgo(post.created_at)}</p>
               </div>
             </div>
             <p className={`px-4 pb-3 text-sm leading-relaxed ${textMain}`}>{post.content}</p>
-            <div className={`flex items-center justify-between px-4 py-2 text-xs ${textSub} border-t ${border}`}>
-              <span>👍 {post.likes} likes</span>
-              <span>{post.comments} comments</span>
-            </div>
             <div className={`flex border-t ${border}`}>
               <button className={`flex-1 py-2 text-sm font-semibold ${textSub}`}>👍 Like</button>
               <button className={`flex-1 py-2 text-sm font-semibold ${textSub} border-l ${border}`}>💬 Comment</button>
