@@ -60,18 +60,20 @@ export default function Home() {
     navigate("/");
   }
 
-  const bg = dark ? "bg-[#0B1D3A]" : "bg-[#F0F2F5]";
-  const headerBg = dark ? "bg-[#13294B]" : "bg-white";
-  const cardBg = dark ? "bg-[#13294B]" : "bg-white";
-  const textMain = dark ? "text-[#F6F5F1]" : "text-[#050505]";
-  const textSub = dark ? "text-[#F6F5F1]/50" : "text-[#65676B]";
-  const border = dark ? "border-[#F6F5F1]/10" : "border-[#E4E6EB]";
+  const bg = dark ? "bg-[#18191A]" : "bg-[#F0F2F5]";
+  const headerBg = dark ? "bg-[#242526]" : "bg-white";
+  const cardBg = dark ? "bg-[#242526]" : "bg-white";
+  const textMain = dark ? "text-[#E4E6EB]" : "text-[#050505]";
+  const textSub = dark ? "text-[#B0B3B8]" : "text-[#65676B]";
+  const border = dark ? "border-[#3E4042]" : "border-[#E4E6EB]";
+  const composerBg = dark ? "bg-[#3A3B3C]" : "bg-[#F0F2F5]";
+  const iconBg = dark ? "bg-[#3A3B3C]" : "bg-[#F0F2F5]";
 
   return (
     <div className={`min-h-screen ${bg}`}>
       {/* Header */}
       <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 ${headerBg} border-b ${border} shadow-sm`}>
-        <h1 className="text-xl font-extrabold text-[#0B1D3A] tracking-tight" style={dark ? { color: "#F6F5F1" } : {}}>
+        <h1 className="text-xl font-extrabold tracking-tight" style={{ color: dark ? "#E4E6EB" : "#0B1D3A" }}>
           Uni.hub
         </h1>
         <div className="flex items-center gap-2">
@@ -95,7 +97,7 @@ export default function Home() {
         <div className="grid grid-cols-4 gap-2">
           {sections.map((s) => (
             <button key={s.name} className="flex flex-col items-center gap-1.5">
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center text-xl ${dark ? "bg-[#F6F5F1]/10" : "bg-[#F0F2F5]"}`}>
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center text-xl ${iconBg}`}>
                 {s.emoji}
               </div>
               <span className={`text-[11px] ${textSub}`}>{s.name}</span>
@@ -111,7 +113,7 @@ export default function Home() {
           <div className="h-9 w-9 rounded-full bg-[#0B1D3A] text-[#F6F5F1] flex items-center justify-center text-sm font-bold shrink-0">
             {initials(email)}
           </div>
-          <div className={`flex-1 rounded-full px-4 py-2 text-sm ${textSub} ${dark ? "bg-[#F6F5F1]/10" : "bg-[#F0F2F5]"}`}>
+          <div className={`flex-1 rounded-full px-4 py-2 text-sm ${textSub} ${composerBg}`}>
             What's happening on campus?
           </div>
         </div>
