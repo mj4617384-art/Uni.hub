@@ -81,7 +81,9 @@ export default function Home() {
         .from("post-images")
         .upload(fileName, imageFile);
 
-      if (!uploadError) {
+      if (uploadError) {
+        alert("Image upload failed: " + uploadError.message);
+      } else {
         const { data: urlData } = supabase.storage
           .from("post-images")
           .getPublicUrl(fileName);
@@ -102,6 +104,8 @@ export default function Home() {
       clearImage();
       setShowComposer(false);
       fetchPosts();
+    } else {
+      alert("Post failed: " + error.message);
     }
   }
 
@@ -121,7 +125,6 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen ${bg}`}>
-      {/* Header */}
       <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 ${headerBg} border-b ${border} shadow-sm`}>
         <h1 className="text-xl font-extrabold tracking-tight" style={{ color: dark ? "#E4E6EB" : "#0B1D3A" }}>
           Uni.hub
@@ -136,7 +139,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Section shortcuts */}
       <div className={`${cardBg} border-b ${border} px-4 py-4`}>
         <div className="grid grid-cols-4 gap-2">
           {sections.map((s) => (
@@ -150,9 +152,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Feed */}
       <div className="max-w-lg mx-auto px-3 py-4 space-y-3">
-        {/* Composer */}
         <div className={`${cardBg} border ${border} rounded-lg p-3 shadow-sm`}>
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full bg-[#0B1D3A] text-[#F6F5F1] flex items-center justify-center text-sm font-bold shrink-0">
@@ -217,7 +217,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Posts */}
         {posts.length === 0 && (
           <p className={`text-center text-sm ${textSub} py-8`}>
             No posts yet — be the first to share something!
