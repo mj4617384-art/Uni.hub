@@ -59,6 +59,7 @@ export default function Home() {
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+    setShowComposer(true);
   }
 
   function clearImage() {
@@ -125,6 +126,7 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen ${bg}`}>
+      {/* Header */}
       <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 ${headerBg} border-b ${border} shadow-sm`}>
         <h1 className="text-xl font-extrabold tracking-tight" style={{ color: dark ? "#E4E6EB" : "#0B1D3A" }}>
           Uni.hub
@@ -139,6 +141,7 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Section shortcuts */}
       <div className={`${cardBg} border-b ${border} px-4 py-4`}>
         <div className="grid grid-cols-4 gap-2">
           {sections.map((s) => (
@@ -152,71 +155,72 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Feed */}
       <div className="max-w-lg mx-auto px-3 py-4 space-y-3">
+        {/* Composer */}
         <div className={`${cardBg} border ${border} rounded-lg p-3 shadow-sm`}>
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full bg-[#0B1D3A] text-[#F6F5F1] flex items-center justify-center text-sm font-bold shrink-0">
               {initials(email)}
             </div>
-            {!showComposer ? (
-              <button
-                onClick={() => setShowComposer(true)}
-                className={`flex-1 text-left rounded-full px-4 py-2 text-sm ${textSub} ${composerBg}`}
-              >
-                What's happening on campus?
-              </button>
-            ) : (
-              <textarea
-                autoFocus
-                value={newPost}
-                onChange={(e) => setNewPost(e.target.value)}
-                placeholder="What's happening on campus?"
-                className={`flex-1 rounded-lg px-3 py-2 text-sm ${textMain} ${composerBg} outline-none resize-none`}
-                rows={3}
-              />
-            )}
+            <button
+              onClick={() => setShowComposer(true)}
+              className={`flex-1 text-left rounded-full px-4 py-2 text-sm ${textSub} ${composerBg}`}
+            >
+              What's happening on campus?
+            </button>
           </div>
 
           {showComposer && (
-            <>
-              {imagePreview && (
-                <div className="relative mt-2">
-                  <img src={imagePreview} alt="Preview" className="w-full rounded-lg max-h-64 object-cover" />
-                  <button
-                    onClick={clearImage}
-                    className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/60 text-white flex items-center justify-center text-sm"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between mt-2">
-                <label className={`text-xs px-3 py-2 rounded-lg cursor-pointer ${textSub} ${composerBg}`}>
-                  📷 Photo
-                  <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
-                </label>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setShowComposer(false); setNewPost(""); clearImage(); }}
-                    className={`text-xs px-3 py-2 rounded-lg ${textSub}`}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handlePost}
-                    disabled={posting || (!newPost.trim() && !imageFile)}
-                    className="text-xs px-4 py-2 rounded-lg bg-[#0B1D3A] text-[#F6F5F1] font-semibold disabled:opacity-50"
-                  >
-                    {posting ? "Posting..." : "Post"}
-                  </button>
-                </div>
-              </div>
-            </>
+            <textarea
+              autoFocus
+              value={newPost}
+              onChange={(e) => setNewPost(e.target.value)}
+              placeholder="What's happening on campus?"
+              className={`w-full mt-3 rounded-lg px-3 py-2 text-sm ${textMain} ${composerBg} outline-none resize-none`}
+              rows={3}
+            />
           )}
+
+          {imagePreview && (
+            <div className="relative mt-2">
+              <img src={imagePreview} alt="Preview" className="w-full rounded-lg max-h-64 object-cover" />
+              <button
+                onClick={clearImage}
+                className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/60 text-white flex items-center justify-center text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          <div className={`flex items-center justify-between mt-2 pt-2 border-t ${border}`}>
+            <label className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg cursor-pointer ${textSub}`}>
+              📷 Photo
+              <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+            </label>
+
+            {(showComposer || imagePreview) && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowComposer(false); setNewPost(""); clearImage(); }}
+                  className={`text-xs px-3 py-2 rounded-lg ${textSub}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePost}
+                  disabled={posting || (!newPost.trim() && !imageFile)}
+                  className="text-xs px-4 py-2 rounded-lg bg-[#0B1D3A] text-[#F6F5F1] font-semibold disabled:opacity-50"
+                >
+                  {posting ? "Posting..." : "Post"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Posts */}
         {posts.length === 0 && (
           <p className={`text-center text-sm ${textSub} py-8`}>
             No posts yet — be the first to share something!
@@ -233,15 +237,30 @@ export default function Home() {
                 <p className={`text-xs ${textSub}`}>{timeAgo(post.created_at)}</p>
               </div>
             </div>
+
             {post.content && (
               <p className={`px-4 pb-3 text-sm leading-relaxed ${textMain}`}>{post.content}</p>
             )}
+
             {post.image_url && (
               <img src={post.image_url} alt="Post" className="w-full max-h-96 object-cover" />
             )}
-            <div className={`flex border-t ${border} mt-2`}>
-              <button className={`flex-1 py-2 text-sm font-semibold ${textSub}`}>👍 Like</button>
-              <button className={`flex-1 py-2 text-sm font-semibold ${textSub} border-l ${border}`}>💬 Comment</button>
+
+            <div className={`flex items-center justify-between px-4 py-2 text-xs ${textSub}`}>
+              <span>👍 0 likes</span>
+              <span>0 comments</span>
+            </div>
+
+            <div className={`flex border-t ${border}`}>
+              <button className={`flex-1 py-2 flex items-center justify-center gap-1.5 text-sm font-semibold ${textSub}`}>
+                👍 Like
+              </button>
+              <button className={`flex-1 py-2 flex items-center justify-center gap-1.5 text-sm font-semibold ${textSub} border-l ${border}`}>
+                💬 Comment
+              </button>
+              <button className={`flex-1 py-2 flex items-center justify-center gap-1.5 text-sm font-semibold ${textSub} border-l ${border}`}>
+                ↗️ Share
+              </button>
             </div>
           </div>
         ))}
