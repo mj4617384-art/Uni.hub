@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Landing() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#0B1D3A] to-[#13294B] px-6 text-center">
@@ -19,13 +21,22 @@ export default function Landing() {
         Uni.hub
       </h1>
       <p className="mt-3 max-w-xs text-sm text-[#F6F5F1]/70 sm:text-base">
-        Your campus, all in one place. We're building something good — check back soon.
+        Your campus, all in one place. Errands, marketplace, and more — built for students.
       </p>
 
-      <div className="mt-8 flex gap-1.5">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-[#F6F5F1]/80" style={{ animationDelay: "0ms" }} />
-        <span className="h-2 w-2 animate-pulse rounded-full bg-[#F6F5F1]/80" style={{ animationDelay: "200ms" }} />
-        <span className="h-2 w-2 animate-pulse rounded-full bg-[#F6F5F1]/80" style={{ animationDelay: "400ms" }} />
+      <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
+        <Link
+          to="/signup"
+          className="w-full rounded-lg bg-[#F6F5F1] text-[#0B1D3A] font-semibold py-3"
+        >
+          Get Started
+        </Link>
+        <Link
+          to="/login"
+          className="w-full rounded-lg bg-[#F6F5F1]/10 border border-[#F6F5F1]/20 text-[#F6F5F1] font-semibold py-3"
+        >
+          Log In
+        </Link>
       </div>
     </div>
   );
