@@ -17,6 +17,12 @@ import {
   Flag,
   Link as LinkIcon,
   BellRing,
+  User,
+  ShoppingBag,
+  Wallet as WalletIcon,
+  Briefcase,
+  Settings,
+  LogOut,
 } from 'lucide-react';
 
 const REACTIONS = [
@@ -45,7 +51,9 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [profiles, setProfiles] = useState({});
+  const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const [toast, setToast] = useState(null);
+  const [openNavMenu, setOpenNavMenu] = useState(false);
 
   const [myPostReactions, setMyPostReactions] = useState({});
   const [postReactionSummary, setPostReactionSummary] = useState({});
@@ -76,23 +84,31 @@ export default function Home() {
 
   async function init() {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) setCurrentUserId(user.id);
+    if (user) {
+      setCurrentUserId(user.id);
+      const { data: profile } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).single();
+      if (profile) setMyAvatarUrl(profile.avatar_url);
+    }
     await fetchPosts(user?.id);
   }
 
   async function loadProfiles(userIds) {
     const missing = [...new Set(userIds)].filter((id) => id && !profiles[id]);
     if (missing.length === 0) return;
-    const { data } = await supabase.from('profiles').select('id, display_name').in('id', missing);
+    const { data } = await supabase.from('profiles').select('id, display_name, avatar_url').in('id', missing);
     if (data) {
       const map = {};
-      data.forEach((p) => { map[p.id] = p.display_name; });
+      data.forEach((p) => { map[p.id] = p; });
       setProfiles((prev) => ({ ...prev, ...map }));
     }
   }
 
   function nameFor(userId) {
-    return profiles[userId] || 'Student';
+    return profiles[userId]?.display_name || 'Student';
+  }
+
+  function avatarFor(userId) {
+    return profiles[userId]?.avatar_url || null;
   }
 
   async function fetchPosts(userId) {
@@ -501,7 +517,7 @@ export default function Home() {
             3
           </span>
         </button>
-        <button className="p-2" onClick={() => navigate('/profile')}>
+        <button className="p-2" onClick={() => setOpenNavMenu(true)}>
           <Menu size={24} className="text-gray-400" />
         </button>
       </div>
@@ -509,7 +525,13 @@ export default function Home() {
       {/* Composer bar */}
       <div className="px-4 py-3 border-b border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0" />
+          <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden">
+            {myAvatarUrl ? (
+              <img src={myAvatarUrl} alt="me" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm font-bold">U</div>
+            )}
+          </button>
           <input
             type="text"
             value={newPostText}
@@ -583,14 +605,19 @@ export default function Home() {
           const topLevelComments = allComments.filter((c) => !c.parent_comment_id);
           const repliesFor = (id) => allComments.filter((c) => c.parent_comment_id === id);
           const isPickerOpen = openReactionPicker === post.id;
+          const postAvatar = avatarFor(post.user_id);
 
           return (
             <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden relative">
               {/* Post header */}
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold">
-                    {nameFor(post.user_id).charAt(0).toUpperCase()}
+                  <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold overflow-hidden">
+                    {postAvatar ? (
+                      <img src={postAvatar} alt={nameFor(post.user_id)} className="w-full h-full object-cover" />
+                    ) : (
+                      nameFor(post.user_id).charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div>
                     <p className="font-semibold text-sm">{nameFor(post.user_id)}</p>
@@ -830,13 +857,10 @@ export default function Home() {
       {activeMenuPost && (
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpenPostMenu(null)} />
-          <div className="relative w-full bg-gray-900 rounded-t-2xl pb-6 pt-2 animate-in slide-in-from-bottom">
+          <div className="relative w-full bg-gray-900 rounded-t-2xl pb-6 pt-2">
             <div className="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-2" />
 
-            <button
-              onClick={handleSavePost}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
-            >
+            <button onClick={handleSavePost} className="w-full flex items-center gap-4 px-5 py-3.5 text-left">
               <Bookmark size={20} className="text-gray-300" />
               <div>
                 <p className="text-sm font-medium">Save post</p>
@@ -852,18 +876,12 @@ export default function Home() {
               <p className="text-sm font-medium">Share</p>
             </button>
 
-            <button
-              onClick={() => handleCopyLink(activeMenuPost)}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
-            >
+            <button onClick={() => handleCopyLink(activeMenuPost)} className="w-full flex items-center gap-4 px-5 py-3.5 text-left">
               <LinkIcon size={20} className="text-gray-300" />
               <p className="text-sm font-medium">Copy link</p>
             </button>
 
-            <button
-              onClick={handleTurnOnNotifications}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
-            >
+            <button onClick={handleTurnOnNotifications} className="w-full flex items-center gap-4 px-5 py-3.5 text-left">
               <BellRing size={20} className="text-gray-300" />
               <p className="text-sm font-medium">Turn on notifications for this post</p>
             </button>
@@ -885,6 +903,64 @@ export default function Home() {
                 <p className="text-sm font-medium text-red-400">Report post</p>
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom sheet: nav / settings menu */}
+      {openNavMenu && (
+        <div className="fixed inset-0 z-50 flex items-end">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setOpenNavMenu(false)} />
+          <div className="relative w-full bg-gray-900 rounded-t-2xl pb-6 pt-2">
+            <div className="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-2" />
+
+            <button
+              onClick={() => { setOpenNavMenu(false); navigate('/profile'); }}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+            >
+              <User size={20} className="text-gray-300" />
+              <p className="text-sm font-medium">Profile</p>
+            </button>
+
+            <button
+              onClick={() => { setOpenNavMenu(false); showToast('Errands coming soon!'); }}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+            >
+              <Briefcase size={20} className="text-gray-300" />
+              <p className="text-sm font-medium">Errands</p>
+            </button>
+
+            <button
+              onClick={() => { setOpenNavMenu(false); showToast('Marketplace coming soon!'); }}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+            >
+              <ShoppingBag size={20} className="text-gray-300" />
+              <p className="text-sm font-medium">Marketplace</p>
+            </button>
+
+            <button
+              onClick={() => { setOpenNavMenu(false); showToast('Wallet coming soon!'); }}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+            >
+              <WalletIcon size={20} className="text-gray-300" />
+              <p className="text-sm font-medium">Wallet</p>
+            </button>
+
+            <button
+              onClick={() => { setOpenNavMenu(false); showToast('Settings coming soon!'); }}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+            >
+              <Settings size={20} className="text-gray-300" />
+              <p className="text-sm font-medium">Settings</p>
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-gray-800 mt-1"
+            >
+              <LogOut size={20} className="text-red-400" />
+              <p className="text-sm font-medium text-red-400">Log Out</p>
+            </button>
           </div>
         </div>
       )}
