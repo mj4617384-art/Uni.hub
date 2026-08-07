@@ -11,6 +11,7 @@ import {
   ThumbsUp,
   Share2,
   X,
+  MoreVertical,
   Trash2,
 } from 'lucide-react';
 
@@ -45,6 +46,7 @@ export default function Home() {
   const [myPostReactions, setMyPostReactions] = useState({});
   const [postReactionSummary, setPostReactionSummary] = useState({});
   const [openReactionPicker, setOpenReactionPicker] = useState(null);
+  const [openPostMenu, setOpenPostMenu] = useState(null);
 
   const [openCommentPostId, setOpenCommentPostId] = useState(null);
   const [commentsByPost, setCommentsByPost] = useState({});
@@ -53,6 +55,7 @@ export default function Home() {
   const [myCommentReactions, setMyCommentReactions] = useState({});
   const [commentReactionSummary, setCommentReactionSummary] = useState({});
   const [openCommentReactionPicker, setOpenCommentReactionPicker] = useState(null);
+  const [openCommentMenu, setOpenCommentMenu] = useState(null);
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
   const [replyText, setReplyText] = useState('');
 
@@ -202,6 +205,7 @@ export default function Home() {
   }
 
   async function deletePost(postId) {
+    setOpenPostMenu(null);
     if (!window.confirm('Delete this post?')) return;
     await supabase.from('posts').delete().eq('id', postId).eq('user_id', currentUserId);
     setPosts((prev) => prev.filter((p) => p.id !== postId));
@@ -365,6 +369,7 @@ export default function Home() {
   }
 
   async function deleteComment(postId, commentId) {
+    setOpenCommentMenu(null);
     await supabase.from('comments').delete().eq('id', commentId).eq('user_id', currentUserId);
     setCommentsByPost((prev) => ({
       ...prev,
@@ -549,6 +554,7 @@ export default function Home() {
           const repliesFor = (id) => allComments.filter((c) => c.parent_comment_id === id);
           const isPickerOpen = openReactionPicker === post.id;
           const isOwner = post.user_id === currentUserId;
+          const isMenuOpen = openPostMenu === post.id;
 
           return (
             <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden relative">
@@ -563,11 +569,33 @@ export default function Home() {
                     <p className="text-xs text-gray-500">{new Date(post.created_at).toLocaleString()}</p>
                   </div>
                 </div>
-                {isOwner && (
-                  <button onClick={() => deletePost(post.id)} className="text-gray-500 p-1">
-                    <Trash2 size={16} />
+                <div className="relative">
+                  <button
+                    onClick={() => setOpenPostMenu(isMenuOpen ? null : post.id)}
+                    className="text-gray-400 p-1"
+                  >
+                    <MoreVertical size={18} />
                   </button>
-                )}
+                  {isMenuOpen && (
+                    <div className="absolute right-0 top-8 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-20 min-w-[140px] overflow-hidden">
+                      {isOwner ? (
+                        <button
+                          onClick={() => deletePost(post.id)}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-gray-800"
+                        >
+                          <Trash2 size={15} /> Delete Post
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setOpenPostMenu(null)}
+                          className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800"
+                        >
+                          Report Post
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Post content */}
@@ -646,6 +674,7 @@ export default function Home() {
                       const cTopTypes = topReactionTypes(cSummary);
                       const isCPickerOpen = openCommentReactionPicker === c.id;
                       const isCommentOwner = c.user_id === currentUserId;
+                      const isCMenuOpen = openCommentMenu === c.id;
                       const replies = repliesFor(c.id);
 
                       return (
@@ -656,11 +685,33 @@ export default function Home() {
                                 <p className="text-xs text-gray-400 mb-0.5">{nameFor(c.user_id)}</p>
                                 <p className="text-sm">{c.content}</p>
                               </div>
-                              {isCommentOwner && (
-                                <button onClick={() => deleteComment(post.id, c.id)} className="text-gray-500 flex-shrink-0">
-                                  <Trash2 size={14} />
+                              <div className="relative flex-shrink-0">
+                                <button
+                                  onClick={() => setOpenCommentMenu(isCMenuOpen ? null : c.id)}
+                                  className="text-gray-500"
+                                >
+                                  <MoreVertical size={14} />
                                 </button>
-                              )}
+                                {isCMenuOpen && (
+                                  <div className="absolute right-0 top-6 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-20 min-w-[120px] overflow-hidden">
+                                    {isCommentOwner ? (
+                                      <button
+                                        onClick={() => deleteComment(post.id, c.id)}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-gray-800"
+                                      >
+                                        <Trash2 size={13} /> Delete
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => setOpenCommentMenu(null)}
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800"
+                                      >
+                                        Report
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-3 mt-1 ml-2">
                               <button
@@ -702,17 +753,31 @@ export default function Home() {
                             <div className="ml-6 mt-2 space-y-2">
                               {replies.map((r) => {
                                 const isReplyOwner = r.user_id === currentUserId;
+                                const isRMenuOpen = openCommentMenu === r.id;
                                 return (
                                   <div key={r.id} className="bg-gray-700/60 rounded-lg px-3 py-2 flex justify-between items-start gap-2">
                                     <div>
                                       <p className="text-xs text-gray-400 mb-0.5">{nameFor(r.user_id)}</p>
                                       <p className="text-sm">{r.content}</p>
                                     </div>
-                                    {isReplyOwner && (
-                                      <button onClick={() => deleteComment(post.id, r.id)} className="text-gray-500 flex-shrink-0">
-                                        <Trash2 size={14} />
+                                    <div className="relative flex-shrink-0">
+                                      <button
+                                        onClick={() => setOpenCommentMenu(isRMenuOpen ? null : r.id)}
+                                        className="text-gray-500"
+                                      >
+                                        <MoreVertical size={14} />
                                       </button>
-                                    )}
+                                      {isRMenuOpen && isReplyOwner && (
+                                        <div className="absolute right-0 top-6 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-20 min-w-[120px] overflow-hidden">
+                                          <button
+                                            onClick={() => deleteComment(post.id, r.id)}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-gray-800"
+                                          >
+                                            <Trash2 size={13} /> Delete
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 );
                               })}
