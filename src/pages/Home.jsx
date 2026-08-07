@@ -6,12 +6,11 @@ import {
   PlaySquare,
   Bell,
   Menu,
-  Search,
-  Plus,
   Camera,
   ThumbsUp,
   Share2,
   Heart,
+  X,
 } from 'lucide-react';
 
 export default function Home() {
@@ -19,6 +18,9 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(true);
   const [loading, setLoading] = useState(true);
   const [newPostText, setNewPostText] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchPosts();
@@ -44,16 +46,53 @@ export default function Home() {
     window.location.href = '/login';
   }
 
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function clearSelectedFile() {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+  }
+
   async function handlePost() {
-    if (!newPostText.trim()) return;
+    if (!newPostText.trim() && !selectedFile) return;
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    setUploading(true);
+    let imageUrl = null;
+
+    if (selectedFile) {
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('post-images')
+        .upload(fileName, selectedFile);
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError.message);
+        setUploading(false);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('post-images')
+        .getPublicUrl(fileName);
+
+      imageUrl = publicUrlData.publicUrl;
+    }
 
     const { error } = await supabase.from('posts').insert([
       {
         user_id: user.id,
         content: newPostText,
+        image_url: imageUrl,
       },
     ]);
 
@@ -61,8 +100,10 @@ export default function Home() {
       console.error('Error posting:', error.message);
     } else {
       setNewPostText('');
+      clearSelectedFile();
       fetchPosts();
     }
+    setUploading(false);
   }
 
   return (
@@ -109,21 +150,49 @@ export default function Home() {
       </div>
 
       {/* Composer bar */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-800">
-        <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0" />
-        <input
-          type="text"
-          value={newPostText}
-          onChange={(e) => setNewPostText(e.target.value)}
-          placeholder="What's happening on campus?"
-          className="flex-1 bg-gray-800 rounded-full px-4 py-2 text-sm text-gray-300 placeholder-gray-500 outline-none"
-        />
-        <button
-          onClick={handlePost}
-          className="text-green-500 text-sm font-semibold flex items-center gap-1 flex-shrink-0"
-        >
-          <Camera size={16} /> Photo
-        </button>
+      <div className="px-4 py-3 border-b border-gray-800">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0" />
+          <input
+            type="text"
+            value={newPostText}
+            onChange={(e) => setNewPostText(e.target.value)}
+            placeholder="What's happening on campus?"
+            className="flex-1 bg-gray-800 rounded-full px-4 py-2 text-sm text-gray-300 placeholder-gray-500 outline-none"
+          />
+          <label className="text-green-500 text-sm font-semibold flex items-center gap-1 flex-shrink-0 cursor-pointer">
+            <Camera size={16} /> Photo
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </label>
+        </div>
+
+        {/* Image preview */}
+        {previewUrl && (
+          <div className="relative mt-3">
+            <img src={previewUrl} alt="preview" className="w-full rounded-lg max-h-64 object-cover" />
+            <button
+              onClick={clearSelectedFile}
+              className="absolute top-2 right-2 bg-black/60 rounded-full p-1"
+            >
+              <X size={16} className="text-white" />
+            </button>
+          </div>
+        )}
+
+        {(newPostText.trim() || selectedFile) && (
+          <button
+            onClick={handlePost}
+            disabled={uploading}
+            className="mt-3 w-full bg-blue-600 disabled:bg-blue-800 text-white text-sm font-semibold py-2 rounded-lg"
+          >
+            {uploading ? 'Posting...' : 'Post'}
+          </button>
+        )}
       </div>
 
       {/* Section shortcuts strip */}
