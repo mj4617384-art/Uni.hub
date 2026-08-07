@@ -21,12 +21,25 @@ export default function Home() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [likedPostIds, setLikedPostIds] = useState(new Set());
+  const [likeCounts, setLikeCounts] = useState({});
+  const [openCommentPostId, setOpenCommentPostId] = useState(null);
+  const [commentsByPost, setCommentsByPost] = useState({});
+  const [commentText, setCommentText] = useState('');
+  const [commentCounts, setCommentCounts] = useState({});
 
   useEffect(() => {
-    fetchPosts();
+    init();
   }, []);
 
-  async function fetchPosts() {
+  async function init() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) setCurrentUserId(user.id);
+    await fetchPosts(user?.id);
+  }
+
+  async function fetchPosts(userId) {
     setLoading(true);
     const { data, error } = await supabase
       .from('posts')
@@ -35,9 +48,40 @@ export default function Home() {
 
     if (error) {
       console.error('Error fetching posts:', error.message);
-    } else {
-      setPosts(data);
+      setLoading(false);
+      return;
     }
+
+    setPosts(data);
+
+    const postIds = data.map((p) => p.id);
+    if (postIds.length > 0) {
+      const { data: likesData } = await supabase
+        .from('likes')
+        .select('post_id, user_id')
+        .in('post_id', postIds);
+
+      const counts = {};
+      const likedSet = new Set();
+      (likesData || []).forEach((like) => {
+        counts[like.post_id] = (counts[like.post_id] || 0) + 1;
+        if (like.user_id === userId) likedSet.add(like.post_id);
+      });
+      setLikeCounts(counts);
+      setLikedPostIds(likedSet);
+
+      const { data: commentsData } = await supabase
+        .from('comments')
+        .select('post_id')
+        .in('post_id', postIds);
+
+      const cCounts = {};
+      (commentsData || []).forEach((c) => {
+        cCounts[c.post_id] = (cCounts[c.post_id] || 0) + 1;
+      });
+      setCommentCounts(cCounts);
+    }
+
     setLoading(false);
   }
 
@@ -101,9 +145,77 @@ export default function Home() {
     } else {
       setNewPostText('');
       clearSelectedFile();
-      fetchPosts();
+      fetchPosts(currentUserId);
     }
     setUploading(false);
+  }
+
+  async function toggleLike(postId) {
+    if (!currentUserId) return;
+
+    const alreadyLiked = likedPostIds.has(postId);
+
+    if (alreadyLiked) {
+      await supabase
+        .from('likes')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', currentUserId);
+
+      setLikedPostIds((prev) => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
+      setLikeCounts((prev) => ({ ...prev, [postId]: (prev[postId] || 1) - 1 }));
+    } else {
+      await supabase
+        .from('likes')
+        .insert([{ post_id: postId, user_id: currentUserId }]);
+
+      setLikedPostIds((prev) => new Set(prev).add(postId));
+      setLikeCounts((prev) => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
+    }
+  }
+
+  async function toggleCommentBox(postId) {
+    if (openCommentPostId === postId) {
+      setOpenCommentPostId(null);
+      return;
+    }
+    setOpenCommentPostId(postId);
+    setCommentText('');
+
+    if (!commentsByPost[postId]) {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('id, content, user_id, created_at')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+      if (!error) {
+        setCommentsByPost((prev) => ({ ...prev, [postId]: data }));
+      }
+    }
+  }
+
+  async function submitComment(postId) {
+    if (!commentText.trim() || !currentUserId) return;
+
+    const { data, error } = await supabase
+      .from('comments')
+      .insert([{ post_id: postId, user_id: currentUserId, content: commentText }])
+      .select()
+      .single();
+
+    if (!error && data) {
+      setCommentsByPost((prev) => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), data],
+      }));
+      setCommentCounts((prev) => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
+      setCommentText('');
+    }
   }
 
   return (
@@ -171,7 +283,6 @@ export default function Home() {
           </label>
         </div>
 
-        {/* Image preview */}
         {previewUrl && (
           <div className="relative mt-3">
             <img src={previewUrl} alt="preview" className="w-full rounded-lg max-h-64 object-cover" />
@@ -220,62 +331,110 @@ export default function Home() {
           <p className="text-center text-gray-500 py-6">No posts yet. Be the first to share!</p>
         )}
 
-        {posts.map((post) => (
-          <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden">
-            {/* Post header */}
-            <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold">
-                U
-              </div>
-              <div>
-                <p className="font-semibold text-sm">Student</p>
-                <p className="text-xs text-gray-500">
-                  {new Date(post.created_at).toLocaleString()}
-                </p>
-              </div>
-            </div>
+        {posts.map((post) => {
+          const isLiked = likedPostIds.has(post.id);
+          const likeCount = likeCounts[post.id] || 0;
+          const commentCount = commentCounts[post.id] || 0;
+          const isCommentOpen = openCommentPostId === post.id;
+          const postComments = commentsByPost[post.id] || [];
 
-            {/* Post content */}
-            {post.content && (
-              <p className="px-4 pb-3 text-sm">{post.content}</p>
-            )}
-            {post.image_url && (
-              <img src={post.image_url} alt="post" className="w-full object-cover" />
-            )}
-
-            {/* Reaction summary row */}
-            <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-400 border-t border-gray-700 mt-1">
-              <div className="flex items-center gap-1">
-                <div className="flex -space-x-1">
-                  <span className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center border border-gray-900">
-                    <ThumbsUp size={10} className="text-white" />
-                  </span>
-                  <span className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center border border-gray-900">
-                    <Heart size={10} className="text-white" />
-                  </span>
+          return (
+            <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden">
+              {/* Post header */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold">
+                  U
                 </div>
-                <span className="ml-1">{post.like_count || 0}</span>
+                <div>
+                  <p className="font-semibold text-sm">Student</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(post.created_at).toLocaleString()}
+                  </p>
+                </div>
               </div>
-              <span>{post.comment_count || 0} comments</span>
-            </div>
 
-            {/* Action row */}
-            <div className="flex border-t border-gray-700">
-              <button className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 text-sm font-medium active:bg-gray-700 transition-colors">
-                <ThumbsUp size={18} />
-                Like
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 text-sm font-medium active:bg-gray-700 transition-colors">
-                <MessageCircle size={18} />
-                Comment
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 text-sm font-medium active:bg-gray-700 transition-colors">
-                <Share2 size={18} />
-                Share
-              </button>
+              {/* Post content */}
+              {post.content && (
+                <p className="px-4 pb-3 text-sm">{post.content}</p>
+              )}
+              {post.image_url && (
+                <img src={post.image_url} alt="post" className="w-full object-cover" />
+              )}
+
+              {/* Reaction summary row */}
+              <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-400 border-t border-gray-700 mt-1">
+                <div className="flex items-center gap-1">
+                  <div className="flex -space-x-1">
+                    <span className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center border border-gray-900">
+                      <ThumbsUp size={10} className="text-white" />
+                    </span>
+                    <span className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center border border-gray-900">
+                      <Heart size={10} className="text-white" />
+                    </span>
+                  </div>
+                  <span className="ml-1">{likeCount}</span>
+                </div>
+                <span>{commentCount} comments</span>
+              </div>
+
+              {/* Action row */}
+              <div className="flex border-t border-gray-700">
+                <button
+                  onClick={() => toggleLike(post.id)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium active:bg-gray-700 transition-colors ${
+                    isLiked ? 'text-blue-500' : 'text-gray-400'
+                  }`}
+                >
+                  <ThumbsUp size={18} fill={isLiked ? 'currentColor' : 'none'} />
+                  Like
+                </button>
+                <button
+                  onClick={() => toggleCommentBox(post.id)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 text-sm font-medium active:bg-gray-700 transition-colors"
+                >
+                  <MessageCircle size={18} />
+                  Comment
+                </button>
+                <button className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 text-sm font-medium active:bg-gray-700 transition-colors">
+                  <Share2 size={18} />
+                  Share
+                </button>
+              </div>
+
+              {/* Comment section */}
+              {isCommentOpen && (
+                <div className="border-t border-gray-700 px-4 py-3">
+                  <div className="space-y-2 mb-3 max-h-48 overflow-y-auto">
+                    {postComments.length === 0 && (
+                      <p className="text-xs text-gray-500">No comments yet. Say something!</p>
+                    )}
+                    {postComments.map((c) => (
+                      <div key={c.id} className="bg-gray-700 rounded-lg px-3 py-2">
+                        <p className="text-xs text-gray-400 mb-0.5">Student</p>
+                        <p className="text-sm">{c.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Write a comment..."
+                      className="flex-1 bg-gray-700 rounded-full px-3 py-1.5 text-sm outline-none"
+                    />
+                    <button
+                      onClick={() => submitComment(post.id)}
+                      className="text-blue-500 text-sm font-semibold px-2"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
