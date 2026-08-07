@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Home as HomeIcon,
@@ -9,9 +9,22 @@ import {
   Camera,
   ThumbsUp,
   Share2,
-  Heart,
   X,
 } from 'lucide-react';
+
+const REACTIONS = [
+  { type: 'like', emoji: '👍', label: 'Like' },
+  { type: 'love', emoji: '❤️', label: 'Love' },
+  { type: 'care', emoji: '🥰', label: 'Care' },
+  { type: 'haha', emoji: '😆', label: 'Haha' },
+  { type: 'wow', emoji: '😮', label: 'Wow' },
+  { type: 'sad', emoji: '😢', label: 'Sad' },
+  { type: 'angry', emoji: '😠', label: 'Angry' },
+];
+
+function reactionEmoji(type) {
+  return REACTIONS.find((r) => r.type === type)?.emoji || '👍';
+}
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -22,12 +35,20 @@ export default function Home() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [likedPostIds, setLikedPostIds] = useState(new Set());
-  const [likeCounts, setLikeCounts] = useState({});
+
+  const [myPostReactions, setMyPostReactions] = useState({});
+  const [postReactionSummary, setPostReactionSummary] = useState({});
+  const [openReactionPicker, setOpenReactionPicker] = useState(null);
+
   const [openCommentPostId, setOpenCommentPostId] = useState(null);
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentText, setCommentText] = useState('');
   const [commentCounts, setCommentCounts] = useState({});
+  const [myCommentReactions, setMyCommentReactions] = useState({});
+  const [commentReactionSummary, setCommentReactionSummary] = useState({});
+  const [openCommentReactionPicker, setOpenCommentReactionPicker] = useState(null);
+
+  const pressTimer = useRef(null);
 
   useEffect(() => {
     init();
@@ -58,17 +79,19 @@ export default function Home() {
     if (postIds.length > 0) {
       const { data: likesData } = await supabase
         .from('likes')
-        .select('post_id, user_id')
+        .select('post_id, user_id, reaction_type')
         .in('post_id', postIds);
 
-      const counts = {};
-      const likedSet = new Set();
+      const summary = {};
+      const mine = {};
       (likesData || []).forEach((like) => {
-        counts[like.post_id] = (counts[like.post_id] || 0) + 1;
-        if (like.user_id === userId) likedSet.add(like.post_id);
+        if (!summary[like.post_id]) summary[like.post_id] = {};
+        summary[like.post_id][like.reaction_type] =
+          (summary[like.post_id][like.reaction_type] || 0) + 1;
+        if (like.user_id === userId) mine[like.post_id] = like.reaction_type;
       });
-      setLikeCounts(counts);
-      setLikedPostIds(likedSet);
+      setPostReactionSummary(summary);
+      setMyPostReactions(mine);
 
       const { data: commentsData } = await supabase
         .from('comments')
@@ -150,33 +173,82 @@ export default function Home() {
     setUploading(false);
   }
 
-  async function toggleLike(postId) {
+  // ---- Post reactions ----
+
+  async function setPostReaction(postId, reactionType) {
     if (!currentUserId) return;
+    setOpenReactionPicker(null);
 
-    const alreadyLiked = likedPostIds.has(postId);
+    const current = myPostReactions[postId];
 
-    if (alreadyLiked) {
-      await supabase
-        .from('likes')
-        .delete()
-        .eq('post_id', postId)
-        .eq('user_id', currentUserId);
-
-      setLikedPostIds((prev) => {
-        const next = new Set(prev);
-        next.delete(postId);
+    if (current === reactionType) {
+      await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', currentUserId);
+      setMyPostReactions((prev) => {
+        const next = { ...prev };
+        delete next[postId];
         return next;
       });
-      setLikeCounts((prev) => ({ ...prev, [postId]: (prev[postId] || 1) - 1 }));
-    } else {
+      setPostReactionSummary((prev) => {
+        const next = { ...prev, [postId]: { ...(prev[postId] || {}) } };
+        if (next[postId][reactionType] > 1) next[postId][reactionType] -= 1;
+        else delete next[postId][reactionType];
+        return next;
+      });
+    } else if (current) {
       await supabase
         .from('likes')
-        .insert([{ post_id: postId, user_id: currentUserId }]);
-
-      setLikedPostIds((prev) => new Set(prev).add(postId));
-      setLikeCounts((prev) => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
+        .update({ reaction_type: reactionType })
+        .eq('post_id', postId)
+        .eq('user_id', currentUserId);
+      setMyPostReactions((prev) => ({ ...prev, [postId]: reactionType }));
+      setPostReactionSummary((prev) => {
+        const next = { ...prev, [postId]: { ...(prev[postId] || {}) } };
+        if (next[postId][current] > 1) next[postId][current] -= 1;
+        else delete next[postId][current];
+        next[postId][reactionType] = (next[postId][reactionType] || 0) + 1;
+        return next;
+      });
+    } else {
+      await supabase.from('likes').insert([{ post_id: postId, user_id: currentUserId, reaction_type: reactionType }]);
+      setMyPostReactions((prev) => ({ ...prev, [postId]: reactionType }));
+      setPostReactionSummary((prev) => {
+        const next = { ...prev, [postId]: { ...(prev[postId] || {}) } };
+        next[postId][reactionType] = (next[postId][reactionType] || 0) + 1;
+        return next;
+      });
     }
   }
+
+  function handleLikePressStart(postId) {
+    pressTimer.current = setTimeout(() => {
+      setOpenReactionPicker(postId);
+    }, 400);
+  }
+
+  function handleLikePressEnd(postId) {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+      if (openReactionPicker !== postId) {
+        setPostReaction(postId, 'like');
+      }
+    }
+  }
+
+  function totalReactions(summaryObj) {
+    if (!summaryObj) return 0;
+    return Object.values(summaryObj).reduce((a, b) => a + b, 0);
+  }
+
+  function topReactionTypes(summaryObj) {
+    if (!summaryObj) return [];
+    return Object.entries(summaryObj)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([type]) => type);
+  }
+
+  // ---- Comments ----
 
   async function toggleCommentBox(postId) {
     if (openCommentPostId === postId) {
@@ -195,6 +267,25 @@ export default function Home() {
 
       if (!error) {
         setCommentsByPost((prev) => ({ ...prev, [postId]: data }));
+
+        const commentIds = data.map((c) => c.id);
+        if (commentIds.length > 0) {
+          const { data: cLikes } = await supabase
+            .from('comment_likes')
+            .select('comment_id, user_id, reaction_type')
+            .in('comment_id', commentIds);
+
+          const summary = {};
+          const mine = {};
+          (cLikes || []).forEach((like) => {
+            if (!summary[like.comment_id]) summary[like.comment_id] = {};
+            summary[like.comment_id][like.reaction_type] =
+              (summary[like.comment_id][like.reaction_type] || 0) + 1;
+            if (like.user_id === currentUserId) mine[like.comment_id] = like.reaction_type;
+          });
+          setCommentReactionSummary((prev) => ({ ...prev, ...summary }));
+          setMyCommentReactions((prev) => ({ ...prev, ...mine }));
+        }
       }
     }
   }
@@ -215,6 +306,66 @@ export default function Home() {
       }));
       setCommentCounts((prev) => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
       setCommentText('');
+    }
+  }
+
+  async function setCommentReaction(commentId, reactionType) {
+    if (!currentUserId) return;
+    setOpenCommentReactionPicker(null);
+
+    const current = myCommentReactions[commentId];
+
+    if (current === reactionType) {
+      await supabase.from('comment_likes').delete().eq('comment_id', commentId).eq('user_id', currentUserId);
+      setMyCommentReactions((prev) => {
+        const next = { ...prev };
+        delete next[commentId];
+        return next;
+      });
+      setCommentReactionSummary((prev) => {
+        const next = { ...prev, [commentId]: { ...(prev[commentId] || {}) } };
+        if (next[commentId][reactionType] > 1) next[commentId][reactionType] -= 1;
+        else delete next[commentId][reactionType];
+        return next;
+      });
+    } else if (current) {
+      await supabase
+        .from('comment_likes')
+        .update({ reaction_type: reactionType })
+        .eq('comment_id', commentId)
+        .eq('user_id', currentUserId);
+      setMyCommentReactions((prev) => ({ ...prev, [commentId]: reactionType }));
+      setCommentReactionSummary((prev) => {
+        const next = { ...prev, [commentId]: { ...(prev[commentId] || {}) } };
+        if (next[commentId][current] > 1) next[commentId][current] -= 1;
+        else delete next[commentId][current];
+        next[commentId][reactionType] = (next[commentId][reactionType] || 0) + 1;
+        return next;
+      });
+    } else {
+      await supabase.from('comment_likes').insert([{ comment_id: commentId, user_id: currentUserId, reaction_type: reactionType }]);
+      setMyCommentReactions((prev) => ({ ...prev, [commentId]: reactionType }));
+      setCommentReactionSummary((prev) => {
+        const next = { ...prev, [commentId]: { ...(prev[commentId] || {}) } };
+        next[commentId][reactionType] = (next[commentId][reactionType] || 0) + 1;
+        return next;
+      });
+    }
+  }
+
+  function handleCommentLikePressStart(commentId) {
+    pressTimer.current = setTimeout(() => {
+      setOpenCommentReactionPicker(commentId);
+    }, 400);
+  }
+
+  function handleCommentLikePressEnd(commentId) {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+      if (openCommentReactionPicker !== commentId) {
+        setCommentReaction(commentId, 'like');
+      }
     }
   }
 
@@ -332,14 +483,17 @@ export default function Home() {
         )}
 
         {posts.map((post) => {
-          const isLiked = likedPostIds.has(post.id);
-          const likeCount = likeCounts[post.id] || 0;
+          const myReaction = myPostReactions[post.id];
+          const summary = postReactionSummary[post.id];
+          const total = totalReactions(summary);
+          const topTypes = topReactionTypes(summary);
           const commentCount = commentCounts[post.id] || 0;
           const isCommentOpen = openCommentPostId === post.id;
           const postComments = commentsByPost[post.id] || [];
+          const isPickerOpen = openReactionPicker === post.id;
 
           return (
-            <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden">
+            <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden relative">
               {/* Post header */}
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold">
@@ -362,31 +516,52 @@ export default function Home() {
               )}
 
               {/* Reaction summary row */}
-              <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-400 border-t border-gray-700 mt-1">
-                <div className="flex items-center gap-1">
-                  <div className="flex -space-x-1">
-                    <span className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center border border-gray-900">
-                      <ThumbsUp size={10} className="text-white" />
-                    </span>
-                    <span className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center border border-gray-900">
-                      <Heart size={10} className="text-white" />
-                    </span>
+              {total > 0 && (
+                <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-400 border-t border-gray-700 mt-1">
+                  <div className="flex items-center gap-1">
+                    <div className="flex -space-x-1">
+                      {topTypes.map((type) => (
+                        <span key={type} className="text-sm">{reactionEmoji(type)}</span>
+                      ))}
+                    </div>
+                    <span className="ml-1">{total}</span>
                   </div>
-                  <span className="ml-1">{likeCount}</span>
+                  <span>{commentCount} comments</span>
                 </div>
-                <span>{commentCount} comments</span>
-              </div>
+              )}
+
+              {/* Reaction picker popup */}
+              {isPickerOpen && (
+                <div className="absolute bottom-16 left-4 bg-gray-900 border border-gray-700 rounded-full flex gap-1 px-2 py-1.5 shadow-lg z-10">
+                  {REACTIONS.map((r) => (
+                    <button
+                      key={r.type}
+                      onClick={() => setPostReaction(post.id, r.type)}
+                      className="text-2xl active:scale-125 transition-transform"
+                    >
+                      {r.emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Action row */}
               <div className="flex border-t border-gray-700">
                 <button
-                  onClick={() => toggleLike(post.id)}
+                  onTouchStart={() => handleLikePressStart(post.id)}
+                  onTouchEnd={() => handleLikePressEnd(post.id)}
+                  onMouseDown={() => handleLikePressStart(post.id)}
+                  onMouseUp={() => handleLikePressEnd(post.id)}
                   className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium active:bg-gray-700 transition-colors ${
-                    isLiked ? 'text-blue-500' : 'text-gray-400'
+                    myReaction ? 'text-blue-500' : 'text-gray-400'
                   }`}
                 >
-                  <ThumbsUp size={18} fill={isLiked ? 'currentColor' : 'none'} />
-                  Like
+                  {myReaction ? (
+                    <span className="text-base">{reactionEmoji(myReaction)}</span>
+                  ) : (
+                    <ThumbsUp size={18} />
+                  )}
+                  {myReaction ? REACTIONS.find((r) => r.type === myReaction)?.label : 'Like'}
                 </button>
                 <button
                   onClick={() => toggleCommentBox(post.id)}
@@ -404,16 +579,59 @@ export default function Home() {
               {/* Comment section */}
               {isCommentOpen && (
                 <div className="border-t border-gray-700 px-4 py-3">
-                  <div className="space-y-2 mb-3 max-h-48 overflow-y-auto">
+                  <div className="space-y-2 mb-3 max-h-64 overflow-y-auto">
                     {postComments.length === 0 && (
                       <p className="text-xs text-gray-500">No comments yet. Say something!</p>
                     )}
-                    {postComments.map((c) => (
-                      <div key={c.id} className="bg-gray-700 rounded-lg px-3 py-2">
-                        <p className="text-xs text-gray-400 mb-0.5">Student</p>
-                        <p className="text-sm">{c.content}</p>
-                      </div>
-                    ))}
+                    {postComments.map((c) => {
+                      const myCReaction = myCommentReactions[c.id];
+                      const cSummary = commentReactionSummary[c.id];
+                      const cTotal = totalReactions(cSummary);
+                      const cTopTypes = topReactionTypes(cSummary);
+                      const isCPickerOpen = openCommentReactionPicker === c.id;
+
+                      return (
+                        <div key={c.id} className="relative">
+                          <div className="bg-gray-700 rounded-lg px-3 py-2">
+                            <p className="text-xs text-gray-400 mb-0.5">Student</p>
+                            <p className="text-sm">{c.content}</p>
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 ml-2">
+                            <button
+                              onTouchStart={() => handleCommentLikePressStart(c.id)}
+                              onTouchEnd={() => handleCommentLikePressEnd(c.id)}
+                              onMouseDown={() => handleCommentLikePressStart(c.id)}
+                              onMouseUp={() => handleCommentLikePressEnd(c.id)}
+                              className={`text-xs font-semibold ${myCReaction ? 'text-blue-500' : 'text-gray-400'}`}
+                            >
+                              {myCReaction ? reactionEmoji(myCReaction) + ' ' + REACTIONS.find((r) => r.type === myCReaction)?.label : 'Like'}
+                            </button>
+                            {cTotal > 0 && (
+                              <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                                {cTopTypes.map((t) => (
+                                  <span key={t}>{reactionEmoji(t)}</span>
+                                ))}
+                                {cTotal}
+                              </span>
+                            )}
+                          </div>
+
+                          {isCPickerOpen && (
+                            <div className="absolute -top-10 left-2 bg-gray-900 border border-gray-700 rounded-full flex gap-1 px-2 py-1 shadow-lg z-10">
+                              {REACTIONS.map((r) => (
+                                <button
+                                  key={r.type}
+                                  onClick={() => setCommentReaction(c.id, r.type)}
+                                  className="text-lg active:scale-125 transition-transform"
+                                >
+                                  {r.emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="flex gap-2">
                     <input
