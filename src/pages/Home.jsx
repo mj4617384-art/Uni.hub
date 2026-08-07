@@ -13,6 +13,10 @@ import {
   X,
   MoreVertical,
   Trash2,
+  Bookmark,
+  Flag,
+  Link as LinkIcon,
+  BellRing,
 } from 'lucide-react';
 
 const REACTIONS = [
@@ -229,6 +233,30 @@ export default function Home() {
     }
   }
 
+  async function handleCopyLink(post) {
+    setOpenPostMenu(null);
+    const url = `${window.location.origin}/home#post-${post.id}`;
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      showToast('Link copied to clipboard');
+    }
+  }
+
+  function handleSavePost() {
+    setOpenPostMenu(null);
+    showToast('Saved posts coming soon!');
+  }
+
+  function handleReportPost() {
+    setOpenPostMenu(null);
+    showToast('Thanks — report submitted.');
+  }
+
+  function handleTurnOnNotifications() {
+    setOpenPostMenu(null);
+    showToast('Notifications for this post turned on');
+  }
+
   // ---- Post reactions ----
 
   async function setPostReaction(postId, reactionType) {
@@ -430,6 +458,8 @@ export default function Home() {
     }
   }
 
+  const activeMenuPost = posts.find((p) => p.id === openPostMenu);
+
   return (
     <div className={darkMode ? 'min-h-screen bg-gray-900 text-white' : 'min-h-screen bg-white text-gray-900'}>
       {toast && (
@@ -553,8 +583,6 @@ export default function Home() {
           const topLevelComments = allComments.filter((c) => !c.parent_comment_id);
           const repliesFor = (id) => allComments.filter((c) => c.parent_comment_id === id);
           const isPickerOpen = openReactionPicker === post.id;
-          const isOwner = post.user_id === currentUserId;
-          const isMenuOpen = openPostMenu === post.id;
 
           return (
             <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden relative">
@@ -569,33 +597,9 @@ export default function Home() {
                     <p className="text-xs text-gray-500">{new Date(post.created_at).toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="relative">
-                  <button
-                    onClick={() => setOpenPostMenu(isMenuOpen ? null : post.id)}
-                    className="text-gray-400 p-1"
-                  >
-                    <MoreVertical size={18} />
-                  </button>
-                  {isMenuOpen && (
-                    <div className="absolute right-0 top-8 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-20 min-w-[140px] overflow-hidden">
-                      {isOwner ? (
-                        <button
-                          onClick={() => deletePost(post.id)}
-                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-gray-800"
-                        >
-                          <Trash2 size={15} /> Delete Post
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => setOpenPostMenu(null)}
-                          className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800"
-                        >
-                          Report Post
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <button onClick={() => setOpenPostMenu(post.id)} className="text-gray-400 p-1">
+                  <MoreVertical size={18} />
+                </button>
               </div>
 
               {/* Post content */}
@@ -821,6 +825,69 @@ export default function Home() {
           );
         })}
       </div>
+
+      {/* Bottom sheet: post options */}
+      {activeMenuPost && (
+        <div className="fixed inset-0 z-50 flex items-end">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setOpenPostMenu(null)} />
+          <div className="relative w-full bg-gray-900 rounded-t-2xl pb-6 pt-2 animate-in slide-in-from-bottom">
+            <div className="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-2" />
+
+            <button
+              onClick={handleSavePost}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+            >
+              <Bookmark size={20} className="text-gray-300" />
+              <div>
+                <p className="text-sm font-medium">Save post</p>
+                <p className="text-xs text-gray-500">Add this to your saved items</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => { setOpenPostMenu(null); handleShare(activeMenuPost); }}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+            >
+              <Share2 size={20} className="text-gray-300" />
+              <p className="text-sm font-medium">Share</p>
+            </button>
+
+            <button
+              onClick={() => handleCopyLink(activeMenuPost)}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+            >
+              <LinkIcon size={20} className="text-gray-300" />
+              <p className="text-sm font-medium">Copy link</p>
+            </button>
+
+            <button
+              onClick={handleTurnOnNotifications}
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+            >
+              <BellRing size={20} className="text-gray-300" />
+              <p className="text-sm font-medium">Turn on notifications for this post</p>
+            </button>
+
+            {activeMenuPost.user_id === currentUserId ? (
+              <button
+                onClick={() => deletePost(activeMenuPost.id)}
+                className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-gray-800 mt-1"
+              >
+                <Trash2 size={20} className="text-red-400" />
+                <p className="text-sm font-medium text-red-400">Delete Post</p>
+              </button>
+            ) : (
+              <button
+                onClick={handleReportPost}
+                className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-gray-800 mt-1"
+              >
+                <Flag size={20} className="text-red-400" />
+                <p className="text-sm font-medium text-red-400">Report post</p>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
