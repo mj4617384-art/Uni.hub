@@ -42,7 +42,8 @@ function reactionEmoji(type) {
   return REACTIONS.find((r) => r.type === type)?.emoji || '👍';
 }
 
-export default function Home() {
+export default function Home() { 
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [darkMode, setDarkMode] = useState(true);
