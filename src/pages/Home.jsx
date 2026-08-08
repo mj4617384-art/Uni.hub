@@ -35,6 +35,8 @@ const REACTIONS = [
   { type: 'angry', emoji: '😠', label: 'Angry' },
 ];
 
+const POSTS_PER_PAGE = 30;
+
 function reactionEmoji(type) {
   return REACTIONS.find((r) => r.type === type)?.emoji || '👍';
 }
@@ -116,7 +118,8 @@ export default function Home() {
     const { data, error } = await supabase
       .from('posts')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(POSTS_PER_PAGE);
 
     if (error) {
       console.error('Error fetching posts:', error.message);
@@ -129,10 +132,13 @@ export default function Home() {
 
     const postIds = data.map((p) => p.id);
     if (postIds.length > 0) {
-      const { data: likesData } = await supabase
-        .from('likes')
-        .select('post_id, user_id, reaction_type')
-        .in('post_id', postIds);
+      const [likesResult, commentsResult] = await Promise.all([
+        supabase.from('likes').select('post_id, user_id, reaction_type').in('post_id', postIds),
+        supabase.from('comments').select('post_id').in('post_id', postIds),
+      ]);
+
+      const likesData = likesResult.data;
+      const commentsData = commentsResult.data;
 
       const summary = {};
       const mine = {};
@@ -143,11 +149,6 @@ export default function Home() {
       });
       setPostReactionSummary(summary);
       setMyPostReactions(mine);
-
-      const { data: commentsData } = await supabase
-        .from('comments')
-        .select('post_id')
-        .in('post_id', postIds);
 
       const cCounts = {};
       (commentsData || []).forEach((c) => {
@@ -527,7 +528,7 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden">
             {myAvatarUrl ? (
-              <img src={myAvatarUrl} alt="me" className="w-full h-full object-cover" />
+              <img src={myAvatarUrl} alt="me" className="w-full h-full object-cover" loading="lazy" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-sm font-bold">U</div>
             )}
@@ -614,7 +615,7 @@ export default function Home() {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold overflow-hidden">
                     {postAvatar ? (
-                      <img src={postAvatar} alt={nameFor(post.user_id)} className="w-full h-full object-cover" />
+                      <img src={postAvatar} alt={nameFor(post.user_id)} className="w-full h-full object-cover" loading="lazy" />
                     ) : (
                       nameFor(post.user_id).charAt(0).toUpperCase()
                     )}
@@ -632,9 +633,9 @@ export default function Home() {
               {/* Post content */}
               {post.content && <p className="px-4 pb-3 text-sm">{post.content}</p>}
               {post.image_url && post.media_type === 'video' ? (
-                <video src={post.image_url} controls className="w-full" />
+                <video src={post.image_url} controls preload="metadata" className="w-full" />
               ) : post.image_url ? (
-                <img src={post.image_url} alt="post" className="w-full object-cover" />
+                <img src={post.image_url} alt="post" className="w-full object-cover" loading="lazy" />
               ) : null}
 
               {/* Reaction summary row */}
