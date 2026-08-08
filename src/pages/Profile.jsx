@@ -3,19 +3,46 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { ArrowLeft, Camera, MessageCircle } from 'lucide-react';
 
+const FACULTY_DEPARTMENTS = {
+  'Faculty of Engineering': ['Civil Engineering', 'Mechanical Engineering', 'Electrical/Electronic Engineering', 'Chemical Engineering', 'Computer Engineering', 'Petroleum Engineering', 'Agricultural Engineering'],
+  'Faculty of Science': ['Physics', 'Chemistry', 'Biology/Biological Sciences', 'Computer Science', 'Mathematics', 'Microbiology', 'Biochemistry', 'Geology', 'Statistics'],
+  'Faculty of Arts': ['English', 'History', 'Linguistics', 'Theatre Arts', 'Philosophy', 'Religious Studies', 'Foreign Languages'],
+  'Faculty of Social Sciences': ['Economics', 'Political Science', 'Sociology', 'Psychology', 'Mass Communication', 'International Relations'],
+  'Faculty of Law': ['Law'],
+  'Faculty of Management Sciences': ['Accounting', 'Business Administration', 'Banking and Finance', 'Marketing', 'Actuarial Science', 'Insurance'],
+  'Faculty of Education': ['Educational Management', 'Guidance and Counselling', 'Curriculum Studies', 'Adult Education', 'Physical and Health Education'],
+  'Faculty of Agriculture': ['Agricultural Economics', 'Animal Science', 'Crop Science', 'Soil Science', 'Forestry and Wildlife'],
+  'Faculty of Environmental Sciences': ['Architecture', 'Urban and Regional Planning', 'Estate Management', 'Building', 'Quantity Surveying', 'Surveying and Geoinformatics'],
+  'College of Medicine': ['Medicine and Surgery', 'Nursing Science', 'Pharmacy', 'Physiology', 'Anatomy', 'Medical Laboratory Science', 'Public Health', 'Dentistry'],
+  'Faculty of Computing / ICT': ['Computer Science', 'Information Technology', 'Software Engineering', 'Cybersecurity', 'Data Science'],
+};
+
+const LEVELS = ['100 Level', '200 Level', '300 Level', '400 Level', '500 Level', '600 Level'];
+
 export default function Profile() {
   const navigate = useNavigate();
   const { userId: routeUserId } = useParams();
   const [authUserId, setAuthUserId] = useState(null);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
   const [displayName, setDisplayName] = useState('');
-  const [editing, setEditing] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [savedName, setSavedName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [houseLocation, setHouseLocation] = useState('');
+  const [faculty, setFaculty] = useState('');
+  const [department, setDepartment] = useState('');
+  const [level, setLevel] = useState('');
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [showCompleteForm, setShowCompleteForm] = useState(false);
+
+  const profileIncomplete = isOwnProfile && (!phoneNumber || !dateOfBirth || !houseLocation || !faculty || !department || !level);
 
   useEffect(() => {
     init();
@@ -38,11 +65,22 @@ export default function Profile() {
     const viewingId = routeUserId || user.id;
     setIsOwnProfile(viewingId === user.id);
 
-    const { data: profile } = await supabase.from('profiles').select('display_name, avatar_url').eq('id', viewingId).single();
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, avatar_url, phone_number, date_of_birth, house_location, faculty, department, level')
+      .eq('id', viewingId)
+      .single();
+
     if (profile) {
       setDisplayName(profile.display_name || '');
       setSavedName(profile.display_name || '');
       setAvatarUrl(profile.avatar_url || null);
+      setPhoneNumber(profile.phone_number || '');
+      setDateOfBirth(profile.date_of_birth || '');
+      setHouseLocation(profile.house_location || '');
+      setFaculty(profile.faculty || '');
+      setDepartment(profile.department || '');
+      setLevel(profile.level || '');
     }
 
     const { data: userPosts } = await supabase
@@ -59,7 +97,25 @@ export default function Profile() {
     if (!displayName.trim()) return;
     await supabase.from('profiles').update({ display_name: displayName }).eq('id', authUserId);
     setSavedName(displayName);
-    setEditing(false);
+    setEditingName(false);
+  }
+
+  async function saveDetails() {
+    setSavingDetails(true);
+    await supabase
+      .from('profiles')
+      .update({
+        phone_number: phoneNumber,
+        date_of_birth: dateOfBirth || null,
+        house_location: houseLocation,
+        faculty,
+        department,
+        level,
+      })
+      .eq('id', authUserId);
+    setSavingDetails(false);
+    setShowCompleteForm(false);
+    showToast('Profile updated');
   }
 
   async function handleAvatarSelect(e) {
@@ -124,7 +180,7 @@ export default function Profile() {
         </div>
         {uploadingAvatar && <p className="text-xs text-gray-500 mb-2">Uploading...</p>}
 
-        {isOwnProfile && editing ? (
+        {isOwnProfile && editingName ? (
           <div className="flex gap-2 w-full max-w-xs">
             <input
               type="text"
@@ -140,11 +196,17 @@ export default function Profile() {
           <div className="flex items-center gap-2">
             <p className="text-lg font-semibold">{savedName || 'Student'}</p>
             {isOwnProfile && (
-              <button onClick={() => setEditing(true)} className="text-xs text-blue-500">
+              <button onClick={() => setEditingName(true)} className="text-xs text-blue-500">
                 Edit
               </button>
             )}
           </div>
+        )}
+
+        {isOwnProfile && (faculty || department || level) && (
+          <p className="text-xs text-gray-500 mt-1">
+            {[department, faculty, level].filter(Boolean).join(' · ')}
+          </p>
         )}
 
         {isOwnProfile ? (
@@ -160,6 +222,115 @@ export default function Profile() {
           </button>
         )}
       </div>
+
+      {isOwnProfile && profileIncomplete && !showCompleteForm && (
+        <div className="mx-3 mb-4 bg-yellow-900/30 border border-yellow-700 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-yellow-300">Your profile is missing some details.</p>
+          <button
+            onClick={() => setShowCompleteForm(true)}
+            className="text-xs font-semibold bg-yellow-600 text-white px-3 py-1.5 rounded-full flex-shrink-0"
+          >
+            Complete
+          </button>
+        </div>
+      )}
+
+      {isOwnProfile && showCompleteForm && (
+        <div className="mx-3 mb-4 bg-gray-800 rounded-xl p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-gray-300">Complete your profile</h3>
+
+          <div>
+            <label className="text-xs text-gray-500">Phone number</label>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="e.g. 080XXXXXXXX"
+              className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm outline-none mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500">Date of birth</label>
+            <input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm outline-none mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500">House location</label>
+            <input
+              type="text"
+              value={houseLocation}
+              onChange={(e) => setHouseLocation(e.target.value)}
+              placeholder="e.g. Hostel block / area"
+              className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm outline-none mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500">Faculty</label>
+            <select
+              value={faculty}
+              onChange={(e) => { setFaculty(e.target.value); setDepartment(''); }}
+              className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm outline-none mt-1"
+            >
+              <option value="">Select faculty</option>
+              {Object.keys(FACULTY_DEPARTMENTS).map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500">Department</label>
+            <select
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              disabled={!faculty}
+              className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm outline-none mt-1 disabled:opacity-50"
+            >
+              <option value="">Select department</option>
+              {(FACULTY_DEPARTMENTS[faculty] || []).map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500">Level</label>
+            <select
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+              className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm outline-none mt-1"
+            >
+              <option value="">Select level</option>
+              {LEVELS.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={saveDetails}
+              disabled={savingDetails}
+              className="flex-1 bg-blue-600 disabled:bg-blue-800 text-white text-sm font-semibold py-2 rounded-lg"
+            >
+              {savingDetails ? 'Saving...' : 'Save'}
+            </button>
+            <button
+              onClick={() => setShowCompleteForm(false)}
+              className="px-4 text-sm text-gray-400"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="px-3 py-2">
         <h2 className="text-sm font-semibold text-gray-400 px-1 mb-2">{isOwnProfile ? 'My Posts' : 'Posts'}</h2>
