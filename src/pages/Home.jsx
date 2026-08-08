@@ -76,10 +76,45 @@ export default function Home() {
 
   const pressTimer = useRef(null);
   const longPressFired = useRef(false);
+  const videoRefs = useRef({});
 
   useEffect(() => {
     init();
   }, []);
+
+  // Auto-pause videos that scroll out of view, so only one plays at a time
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target;
+          if (!entry.isIntersecting || entry.intersectionRatio < 0.5) {
+            if (!video.paused) video.pause();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    Object.values(videoRefs.current).forEach((el) => {
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [posts]);
+
+  function registerVideoRef(postId, el) {
+    if (el) videoRefs.current[postId] = el;
+    else delete videoRefs.current[postId];
+  }
+
+  function handleVideoPlay(postId) {
+    Object.entries(videoRefs.current).forEach(([id, el]) => {
+      if (id !== String(postId) && el && !el.paused) {
+        el.pause();
+      }
+    });
+  }
 
   function showToast(msg) {
     setToast(msg);
@@ -647,7 +682,15 @@ export default function Home() {
               {/* Post content */}
               {post.content && <p className="px-4 pb-3 text-sm">{post.content}</p>}
               {post.image_url && post.media_type === 'video' ? (
-                <video src={post.image_url} controls preload="metadata" className="w-full" />
+                <video
+                  ref={(el) => registerVideoRef(post.id, el)}
+                  onPlay={() => handleVideoPlay(post.id)}
+                  src={post.image_url}
+                  controls
+                  preload="metadata"
+                  playsInline
+                  className="w-full"
+                />
               ) : post.image_url ? (
                 <img src={post.image_url} alt="post" className="w-full object-cover" loading="lazy" />
               ) : null}
