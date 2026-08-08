@@ -44,6 +44,17 @@ function reactionEmoji(type) {
 
 export default function Home() { 
   const [profileIncomplete, setProfileIncomplete] = useState(false);
+  {profileIncomplete && (
+        <div className="mx-3 mt-2 bg-yellow-900/30 border border-yellow-700 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3">
+          <p className="text-xs text-yellow-300">Complete your profile to unlock all features</p>
+          <button
+            onClick={() => navigate('/profile')}
+            className="text-xs font-semibold bg-yellow-600 text-white px-3 py-1 rounded-full flex-shrink-0"
+          >
+            Complete
+          </button>
+        </div>
+      )}
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [darkMode, setDarkMode] = useState(true);
