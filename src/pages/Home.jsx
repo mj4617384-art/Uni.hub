@@ -42,19 +42,7 @@ function reactionEmoji(type) {
   return REACTIONS.find((r) => r.type === type)?.emoji || '👍';
 }
 
-export default function Home() { 
-  const [profileIncomplete, setProfileIncomplete] = useState(false);
-  {profileIncomplete && (
-        <div className="mx-3 mt-2 bg-yellow-900/30 border border-yellow-700 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3">
-          <p className="text-xs text-yellow-300">Complete your profile to unlock all features</p>
-          <button
-            onClick={() => navigate('/profile')}
-            className="text-xs font-semibold bg-yellow-600 text-white px-3 py-1 rounded-full flex-shrink-0"
-          >
-            Complete
-          </button>
-        </div>
-      )}
+export default function Home() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [darkMode, setDarkMode] = useState(true);
@@ -67,6 +55,7 @@ export default function Home() {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [profiles, setProfiles] = useState({});
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [toast, setToast] = useState(null);
   const [openNavMenu, setOpenNavMenu] = useState(false);
 
@@ -564,6 +553,18 @@ export default function Home() {
         </div>
       </div>
 
+      {profileIncomplete && (
+        <div className="mx-3 mt-2 bg-yellow-900/30 border border-yellow-700 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3">
+          <p className="text-xs text-yellow-300">Complete your profile to unlock all features</p>
+          <button
+            onClick={() => navigate('/profile')}
+            className="text-xs font-semibold bg-yellow-600 text-white px-3 py-1 rounded-full flex-shrink-0"
+          >
+            Complete
+          </button>
+        </div>
+      )}
+
       <div className="flex justify-around items-center py-2 border-b border-gray-800">
         <button className="p-2" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <HomeIcon size={24} className="text-blue-500" />
@@ -585,7 +586,6 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Composer bar — restructured so Photo/Video button gets its own row and never gets squeezed on narrow screens */}
       <div className="px-4 py-3 border-b border-gray-800">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden">
