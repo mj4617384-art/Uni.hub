@@ -36,6 +36,7 @@ const REACTIONS = [
 ];
 
 const POSTS_PER_PAGE = 30;
+const LONG_PRESS_MS = 400;
 
 function reactionEmoji(type) {
   return REACTIONS.find((r) => r.type === type)?.emoji || '👍';
@@ -74,6 +75,7 @@ export default function Home() {
   const [replyText, setReplyText] = useState('');
 
   const pressTimer = useRef(null);
+  const longPressFired = useRef(false);
 
   useEffect(() => {
     init();
@@ -274,16 +276,15 @@ export default function Home() {
     showToast('Notifications for this post turned on');
   }
 
-  // ---- Post reactions ----
+  // ---- Post reactions (optimistic — UI updates instantly, DB syncs in background) ----
 
-  async function setPostReaction(postId, reactionType) {
+  function setPostReaction(postId, reactionType) {
     if (!currentUserId) return;
     setOpenReactionPicker(null);
 
     const current = myPostReactions[postId];
 
     if (current === reactionType) {
-      await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', currentUserId);
       setMyPostReactions((prev) => {
         const next = { ...prev };
         delete next[postId];
@@ -295,8 +296,8 @@ export default function Home() {
         else delete next[postId][reactionType];
         return next;
       });
+      supabase.from('likes').delete().eq('post_id', postId).eq('user_id', currentUserId);
     } else if (current) {
-      await supabase.from('likes').update({ reaction_type: reactionType }).eq('post_id', postId).eq('user_id', currentUserId);
       setMyPostReactions((prev) => ({ ...prev, [postId]: reactionType }));
       setPostReactionSummary((prev) => {
         const next = { ...prev, [postId]: { ...(prev[postId] || {}) } };
@@ -305,26 +306,33 @@ export default function Home() {
         next[postId][reactionType] = (next[postId][reactionType] || 0) + 1;
         return next;
       });
+      supabase.from('likes').update({ reaction_type: reactionType }).eq('post_id', postId).eq('user_id', currentUserId);
     } else {
-      await supabase.from('likes').insert([{ post_id: postId, user_id: currentUserId, reaction_type: reactionType }]);
       setMyPostReactions((prev) => ({ ...prev, [postId]: reactionType }));
       setPostReactionSummary((prev) => {
         const next = { ...prev, [postId]: { ...(prev[postId] || {}) } };
         next[postId][reactionType] = (next[postId][reactionType] || 0) + 1;
         return next;
       });
+      supabase.from('likes').insert([{ post_id: postId, user_id: currentUserId, reaction_type: reactionType }]);
     }
   }
 
   function handleLikePressStart(postId) {
-    pressTimer.current = setTimeout(() => setOpenReactionPicker(postId), 400);
+    longPressFired.current = false;
+    pressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      setOpenReactionPicker(postId);
+    }, LONG_PRESS_MS);
   }
 
   function handleLikePressEnd(postId) {
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
-      if (openReactionPicker !== postId) setPostReaction(postId, 'like');
+    }
+    if (!longPressFired.current) {
+      setPostReaction(postId, 'like');
     }
   }
 
@@ -423,14 +431,13 @@ export default function Home() {
     setCommentCounts((prev) => ({ ...prev, [postId]: Math.max((prev[postId] || 1) - 1, 0) }));
   }
 
-  async function setCommentReaction(commentId, reactionType) {
+  function setCommentReaction(commentId, reactionType) {
     if (!currentUserId) return;
     setOpenCommentReactionPicker(null);
 
     const current = myCommentReactions[commentId];
 
     if (current === reactionType) {
-      await supabase.from('comment_likes').delete().eq('comment_id', commentId).eq('user_id', currentUserId);
       setMyCommentReactions((prev) => {
         const next = { ...prev };
         delete next[commentId];
@@ -442,8 +449,8 @@ export default function Home() {
         else delete next[commentId][reactionType];
         return next;
       });
+      supabase.from('comment_likes').delete().eq('comment_id', commentId).eq('user_id', currentUserId);
     } else if (current) {
-      await supabase.from('comment_likes').update({ reaction_type: reactionType }).eq('comment_id', commentId).eq('user_id', currentUserId);
       setMyCommentReactions((prev) => ({ ...prev, [commentId]: reactionType }));
       setCommentReactionSummary((prev) => {
         const next = { ...prev, [commentId]: { ...(prev[commentId] || {}) } };
@@ -452,26 +459,33 @@ export default function Home() {
         next[commentId][reactionType] = (next[commentId][reactionType] || 0) + 1;
         return next;
       });
+      supabase.from('comment_likes').update({ reaction_type: reactionType }).eq('comment_id', commentId).eq('user_id', currentUserId);
     } else {
-      await supabase.from('comment_likes').insert([{ comment_id: commentId, user_id: currentUserId, reaction_type: reactionType }]);
       setMyCommentReactions((prev) => ({ ...prev, [commentId]: reactionType }));
       setCommentReactionSummary((prev) => {
         const next = { ...prev, [commentId]: { ...(prev[commentId] || {}) } };
         next[commentId][reactionType] = (next[commentId][reactionType] || 0) + 1;
         return next;
       });
+      supabase.from('comment_likes').insert([{ comment_id: commentId, user_id: currentUserId, reaction_type: reactionType }]);
     }
   }
 
   function handleCommentLikePressStart(commentId) {
-    pressTimer.current = setTimeout(() => setOpenCommentReactionPicker(commentId), 400);
+    longPressFired.current = false;
+    pressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      setOpenCommentReactionPicker(commentId);
+    }, LONG_PRESS_MS);
   }
 
   function handleCommentLikePressEnd(commentId) {
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
-      if (openCommentReactionPicker !== commentId) setCommentReaction(commentId, 'like');
+    }
+    if (!longPressFired.current) {
+      setCommentReaction(commentId, 'like');
     }
   }
 
