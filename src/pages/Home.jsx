@@ -82,7 +82,6 @@ export default function Home() {
     init();
   }, []);
 
-  // Auto-pause videos that scroll out of view, so only one plays at a time
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -311,8 +310,6 @@ export default function Home() {
     showToast('Notifications for this post turned on');
   }
 
-  // ---- Post reactions (optimistic — UI updates instantly, DB syncs in background) ----
-
   function setPostReaction(postId, reactionType) {
     if (!currentUserId) return;
     setOpenReactionPicker(null);
@@ -380,8 +377,6 @@ export default function Home() {
     if (!summaryObj) return [];
     return Object.entries(summaryObj).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([type]) => type);
   }
-
-  // ---- Comments ----
 
   async function toggleCommentBox(postId) {
     if (openCommentPostId === postId) {
@@ -534,7 +529,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
         <h1 className="text-2xl font-bold text-blue-500">Uni.hub</h1>
         <div className="flex items-center gap-3">
@@ -550,7 +544,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Icon nav row */}
       <div className="flex justify-around items-center py-2 border-b border-gray-800">
         <button className="p-2" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <HomeIcon size={24} className="text-blue-500" />
@@ -572,7 +565,7 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Composer bar */}
+      {/* Composer bar — restructured so Photo/Video button gets its own row and never gets squeezed on narrow screens */}
       <div className="px-4 py-3 border-b border-gray-800">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden">
@@ -587,10 +580,14 @@ export default function Home() {
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             placeholder="What's happening on campus?"
-            className="flex-1 bg-gray-800 rounded-full px-4 py-2 text-sm text-gray-300 placeholder-gray-500 outline-none"
+            className="flex-1 min-w-0 bg-gray-800 rounded-full px-4 py-2 text-sm text-gray-300 placeholder-gray-500 outline-none"
           />
-          <label className="text-green-500 text-sm font-semibold flex items-center gap-1 flex-shrink-0 cursor-pointer">
-            <Camera size={16} /> Photo/Video
+        </div>
+
+        <div className="mt-2 ml-[52px]">
+          <label className="inline-flex items-center gap-1.5 text-green-500 text-sm font-semibold cursor-pointer">
+            <Camera size={16} className="flex-shrink-0" />
+            <span className="whitespace-nowrap">Photo/Video</span>
             <input type="file" accept="image/*,video/*" onChange={handleFileSelect} className="hidden" />
           </label>
         </div>
@@ -619,7 +616,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* Section shortcuts strip */}
       <div className="flex gap-2 overflow-x-auto px-3 py-3">
         {[
           { label: 'Errands', color: 'bg-orange-600', action: () => showToast('Errands coming soon!') },
@@ -637,7 +633,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Feed */}
       <div className="px-3 py-2 space-y-3">
         {loading && <p className="text-center text-gray-500 py-6">Loading feed...</p>}
         {!loading && posts.length === 0 && (
@@ -659,9 +654,11 @@ export default function Home() {
 
           return (
             <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden relative">
-              {/* Post header */}
               <div className="flex items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate(`/profile/${post.user_id}`)}
+                  className="flex items-center gap-3 text-left"
+                >
                   <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold overflow-hidden">
                     {postAvatar ? (
                       <img src={postAvatar} alt={nameFor(post.user_id)} className="w-full h-full object-cover" loading="lazy" />
@@ -673,13 +670,12 @@ export default function Home() {
                     <p className="font-semibold text-sm">{nameFor(post.user_id)}</p>
                     <p className="text-xs text-gray-500">{new Date(post.created_at).toLocaleString()}</p>
                   </div>
-                </div>
+                </button>
                 <button onClick={() => setOpenPostMenu(post.id)} className="text-gray-400 p-1">
                   <MoreVertical size={18} />
                 </button>
               </div>
 
-              {/* Post content */}
               {post.content && <p className="px-4 pb-3 text-sm">{post.content}</p>}
               {post.image_url && post.media_type === 'video' ? (
                 <video
@@ -695,7 +691,6 @@ export default function Home() {
                 <img src={post.image_url} alt="post" className="w-full object-cover" loading="lazy" />
               ) : null}
 
-              {/* Reaction summary row */}
               {total > 0 && (
                 <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-400 border-t border-gray-700 mt-1">
                   <div className="flex items-center gap-1">
@@ -710,7 +705,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Reaction picker popup */}
               {isPickerOpen && (
                 <div className="absolute bottom-16 left-4 bg-gray-900 border border-gray-700 rounded-full flex gap-1 px-2 py-1.5 shadow-lg z-10">
                   {REACTIONS.map((r) => (
@@ -721,7 +715,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Action row */}
               <div className="flex border-t border-gray-700">
                 <button
                   onTouchStart={() => handleLikePressStart(post.id)}
@@ -749,7 +742,6 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Comment section */}
               {isCommentOpen && (
                 <div className="border-t border-gray-700 px-4 py-3">
                   <div className="space-y-3 mb-3 max-h-72 overflow-y-auto">
@@ -837,7 +829,6 @@ export default function Home() {
                             )}
                           </div>
 
-                          {/* Replies */}
                           {replies.length > 0 && (
                             <div className="ml-6 mt-2 space-y-2">
                               {replies.map((r) => {
@@ -873,7 +864,6 @@ export default function Home() {
                             </div>
                           )}
 
-                          {/* Reply input */}
                           {replyingToCommentId === c.id && (
                             <div className="ml-6 mt-2 flex gap-2">
                               <input
@@ -911,7 +901,6 @@ export default function Home() {
         })}
       </div>
 
-      {/* Bottom sheet: post options */}
       {activeMenuPost && (
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpenPostMenu(null)} />
@@ -965,7 +954,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Bottom sheet: nav / settings menu */}
       {openNavMenu && (
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpenNavMenu(false)} />
