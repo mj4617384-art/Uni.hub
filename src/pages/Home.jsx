@@ -124,8 +124,16 @@ export default function Home() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       setCurrentUserId(user.id);
-      const { data: profile } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).single();
-      if (profile) setMyAvatarUrl(profile.avatar_url);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('avatar_url, phone_number, date_of_birth, house_location, faculty, department, level')
+        .eq('id', user.id)
+        .single();
+      if (profile) {
+        setMyAvatarUrl(profile.avatar_url);
+        const incomplete = !profile.phone_number || !profile.date_of_birth || !profile.house_location || !profile.faculty || !profile.department || !profile.level;
+        setProfileIncomplete(incomplete);
+      }
     }
     await fetchPosts(user?.id);
   }
