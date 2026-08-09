@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Landmark } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -33,20 +33,19 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex flex-col justify-center px-6 py-10 relative overflow-hidden">
-      {/* Ambient gradient glow */}
-      <div className="pointer-events-none absolute -top-32 -left-24 w-72 h-72 bg-fuchsia-600/20 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -right-24 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-[#0A0A0D] text-white flex flex-col justify-center px-6 py-10 relative overflow-hidden">
+      <div className="pointer-events-none absolute -top-32 -left-24 w-72 h-72 bg-red-600/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -right-24 w-80 h-80 bg-red-700/10 rounded-full blur-3xl" />
 
       <div className="relative max-w-sm mx-auto w-full">
         <div className="flex flex-col items-center mb-1">
-  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-500 via-violet-500 to-orange-400 flex items-center justify-center mb-3">
-    <span className="text-lg font-extrabold text-white">U</span>
-  </div>
-  <h1 className="text-3xl font-extrabold bg-gradient-to-r from-fuchsia-400 via-violet-400 to-orange-300 bg-clip-text text-transparent">
-    Uni.hub
-  </h1>
-</div>
+          <div className="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center mb-3 shadow-lg shadow-red-900/40">
+            <span className="text-lg font-extrabold text-white">U</span>
+          </div>
+          <h1 className="text-3xl font-extrabold">
+            <span className="text-white">Uni</span><span className="text-red-500">.hub</span>
+          </h1>
+        </div>
         <p className="text-zinc-400 text-center text-sm mb-8">
           Your campus. Your community. Everything in one place.
         </p>
@@ -71,7 +70,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@university.edu"
-                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500 transition-colors"
+                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-red-600 transition-colors"
                 />
               </div>
             </div>
@@ -84,8 +83,8 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500 transition-colors"
+                  placeholder="Enter your password"
+                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-red-600 transition-colors"
                 />
                 <button
                   type="button"
@@ -98,13 +97,13 @@ export default function Login() {
             </div>
 
             <div className="text-right">
-              <a href="#" className="text-xs text-zinc-500 hover:text-zinc-300">Forgot password?</a>
+              <a href="#" className="text-xs text-red-500 hover:text-red-400">Forgot password?</a>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-fuchsia-500 to-orange-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl shadow-lg mt-2"
+              className="w-full bg-red-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl shadow-lg shadow-red-900/30 mt-2"
             >
               {loading ? 'Signing in...' : 'Log In'}
             </button>
@@ -116,9 +115,17 @@ export default function Login() {
             <div className="flex-1 h-px bg-zinc-800" />
           </div>
 
+          <button
+            type="button"
+            className="w-full flex items-center justify-center gap-2 border border-zinc-700 text-zinc-300 font-medium py-3 rounded-xl mb-5"
+          >
+            <Landmark size={17} />
+            Continue with University SSO
+          </button>
+
           <p className="text-center text-sm text-zinc-500">
             Don't have an account?{' '}
-            <a href="/signup" className="text-fuchsia-400 font-semibold">Create account</a>
+            <a href="/signup" className="text-red-500 font-semibold">Create account</a>
           </p>
         </div>
 
