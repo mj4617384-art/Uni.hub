@@ -2,9 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
-  Home as HomeIcon,
   MessageCircle,
-  PlaySquare,
   Bell,
   Menu,
   Camera,
@@ -23,6 +21,10 @@ import {
   Briefcase,
   Settings,
   LogOut,
+  BookOpen,
+  CalendarDays,
+  Users,
+  Flame,
 } from 'lucide-react';
 
 const REACTIONS = [
@@ -331,8 +333,6 @@ export default function Home() {
     showToast('Notifications for this post turned on');
   }
 
-  // ---- Post reactions (optimistic, with raw-list tracking for "who reacted") ----
-
   function setPostReaction(postId, reactionType) {
     if (!currentUserId) return;
     setOpenReactionPicker(null);
@@ -447,8 +447,6 @@ export default function Home() {
     loadProfiles(reactorIds);
     setOpenReactorsList(postId);
   }
-
-  // ---- Comments ----
 
   async function toggleCommentBox(postId) {
     if (openCommentPostId === postId) {
@@ -618,82 +616,129 @@ export default function Home() {
   const reactorsPost = posts.find((p) => p.id === openReactorsList);
   const reactorsList = reactorsPost ? (postLikesRaw[reactorsPost.id] || []) : [];
 
+  const services = [
+    { label: 'Errands', icon: Briefcase, gradient: 'from-orange-500 to-amber-400', action: () => showToast('Errands coming soon!') },
+    { label: 'Marketplace', icon: ShoppingBag, gradient: 'from-fuchsia-500 to-pink-500', action: () => showToast('Marketplace coming soon!') },
+    { label: 'Wallet', icon: WalletIcon, gradient: 'from-emerald-500 to-teal-400', action: () => showToast('Wallet coming soon!') },
+    { label: 'Study Hub', icon: BookOpen, gradient: 'from-sky-500 to-cyan-400', action: () => showToast('Study Hub coming soon!') },
+    { label: 'Events', icon: CalendarDays, gradient: 'from-violet-500 to-purple-400', action: () => showToast('Campus Events coming soon!') },
+    { label: 'Communities', icon: Users, gradient: 'from-rose-500 to-red-400', action: () => showToast('Communities coming soon!') },
+  ];
+
   return (
-    <div className={darkMode ? 'min-h-screen bg-gray-900 text-white' : 'min-h-screen bg-white text-gray-900'}>
+    <div className={darkMode ? 'min-h-screen bg-zinc-950 text-white' : 'min-h-screen bg-white text-gray-900'}>
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-4 py-2 rounded-full z-50 shadow-lg">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-zinc-800 text-white text-sm px-4 py-2 rounded-full z-50 shadow-lg">
           {toast}
         </div>
       )}
 
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-        <h1 className="text-2xl font-bold text-blue-500">Uni.hub</h1>
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+        <h1 className="text-2xl font-extrabold bg-gradient-to-r from-fuchsia-400 via-violet-400 to-orange-300 bg-clip-text text-transparent">
+          Uni.hub
+        </h1>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center"
+            className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center"
           >
             {darkMode ? '🌙' : '☀️'}
           </button>
-          <button onClick={handleLogout} className="px-3 py-1.5 rounded-full bg-gray-800 text-sm">
-            Log Out
+          <button
+            className="p-2 relative"
+            onClick={() => showToast('Notifications coming soon!')}
+          >
+            <Bell size={22} className="text-zinc-400" />
+            <span className="absolute top-1 right-1 bg-fuchsia-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              3
+            </span>
+          </button>
+          <button className="p-2" onClick={() => showToast('Messaging coming soon!')}>
+            <MessageCircle size={22} className="text-zinc-400" />
+          </button>
+          <button onClick={() => setOpenNavMenu(true)} className="p-2">
+            <Menu size={22} className="text-zinc-400" />
           </button>
         </div>
       </div>
 
       {profileIncomplete && (
-        <div className="mx-3 mt-2 bg-yellow-900/30 border border-yellow-700 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3">
-          <p className="text-xs text-yellow-300">Complete your profile to unlock all features</p>
+        <div className="mx-3 mt-3 bg-gradient-to-r from-amber-900/40 to-orange-900/30 border border-amber-700/60 rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 shadow-lg">
+          <p className="text-xs text-amber-300">Complete your profile to unlock all features</p>
           <button
             onClick={() => navigate('/profile')}
-            className="text-xs font-semibold bg-yellow-600 text-white px-3 py-1 rounded-full flex-shrink-0"
+            className="text-xs font-semibold bg-amber-500 text-zinc-950 px-3 py-1 rounded-full flex-shrink-0"
           >
             Complete
           </button>
         </div>
       )}
 
-      <div className="flex justify-around items-center py-2 border-b border-gray-800">
-        <button className="p-2" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <HomeIcon size={24} className="text-blue-500" />
-        </button>
-        <button className="p-2" onClick={() => showToast('Messaging coming soon!')}>
-          <MessageCircle size={24} className="text-gray-400" />
-        </button>
-        <button className="p-2" onClick={() => showToast('Reels coming soon!')}>
-          <PlaySquare size={24} className="text-gray-400" />
-        </button>
-        <button className="p-2 relative" onClick={() => showToast('Notifications coming soon!')}>
-          <Bell size={24} className="text-gray-400" />
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-            3
-          </span>
-        </button>
-        <button className="p-2" onClick={() => setOpenNavMenu(true)}>
-          <Menu size={24} className="text-gray-400" />
-        </button>
+      {/* Campus services dashboard */}
+      <div className="px-3 pt-4 pb-2">
+        <h2 className="text-sm font-bold text-zinc-300 px-1 mb-2">Campus Services</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {services.map((s) => {
+            const Icon = s.icon;
+            return (
+              <button
+                key={s.label}
+                onClick={s.action}
+                className="flex flex-col items-center justify-center gap-2 py-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-md active:scale-95 transition-transform"
+              >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center shadow-md`}>
+                  <Icon size={19} className="text-white" />
+                </div>
+                <span className="text-xs font-semibold text-zinc-200">{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="px-4 py-3 border-b border-gray-800">
+      {/* Trending strip */}
+      <div className="px-3 py-2">
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <Flame size={15} className="text-orange-400" />
+          <h2 className="text-sm font-bold text-zinc-300">Trending on Campus</h2>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {['#Freshers2026', '#ExamSZN', '#HostelLife', '#CampusFootball'].map((tag) => (
+            <button
+              key={tag}
+              onClick={() => showToast('Campus trends coming soon!')}
+              className="flex-shrink-0 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-300"
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Composer bar */}
+      <div className="mx-3 mt-2 mb-1 p-3 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-md">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden">
-            {myAvatarUrl ? (
-              <img src={myAvatarUrl} alt="me" className="w-full h-full object-cover" loading="lazy" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm font-bold">U</div>
-            )}
+          <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-orange-400 p-[2px] flex-shrink-0">
+            <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800">
+              {myAvatarUrl ? (
+                <img src={myAvatarUrl} alt="me" className="w-full h-full object-cover" loading="lazy" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-sm font-bold">U</div>
+              )}
+            </div>
           </button>
           <input
             type="text"
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             placeholder="What's happening on campus?"
-            className="flex-1 min-w-0 bg-gray-800 rounded-full px-4 py-2 text-sm text-gray-300 placeholder-gray-500 outline-none"
+            className="flex-1 min-w-0 bg-zinc-800 rounded-full px-4 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none"
           />
         </div>
 
         <div className="mt-2 ml-[52px]">
-          <label className="inline-flex items-center gap-1.5 text-green-500 text-sm font-semibold cursor-pointer">
+          <label className="inline-flex items-center gap-1.5 text-emerald-400 text-sm font-semibold cursor-pointer">
             <Camera size={16} className="flex-shrink-0" />
             <span className="whitespace-nowrap">Photo/Video</span>
             <input type="file" accept="image/*,video/*" onChange={handleFileSelect} className="hidden" />
@@ -703,9 +748,9 @@ export default function Home() {
         {previewUrl && (
           <div className="relative mt-3">
             {selectedMediaType === 'video' ? (
-              <video src={previewUrl} controls className="w-full rounded-lg max-h-64" />
+              <video src={previewUrl} controls className="w-full rounded-xl max-h-64" />
             ) : (
-              <img src={previewUrl} alt="preview" className="w-full rounded-lg max-h-64 object-cover" />
+              <img src={previewUrl} alt="preview" className="w-full rounded-xl max-h-64 object-cover" />
             )}
             <button onClick={clearSelectedFile} className="absolute top-2 right-2 bg-black/60 rounded-full p-1">
               <X size={16} className="text-white" />
@@ -717,34 +762,20 @@ export default function Home() {
           <button
             onClick={handlePost}
             disabled={uploading}
-            className="mt-3 w-full bg-blue-600 disabled:bg-blue-800 text-white text-sm font-semibold py-2 rounded-lg"
+            className="mt-3 w-full bg-gradient-to-r from-fuchsia-500 to-orange-400 disabled:opacity-50 text-white font-semibold py-2 rounded-xl shadow-md"
           >
             {uploading ? 'Posting...' : 'Post'}
           </button>
         )}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto px-3 py-3">
-        {[
-          { label: 'Errands', color: 'bg-orange-600', action: () => showToast('Errands coming soon!') },
-          { label: 'Marketplace', color: 'bg-purple-600', action: () => showToast('Marketplace coming soon!') },
-          { label: 'Wallet', color: 'bg-green-600', action: () => showToast('Wallet coming soon!') },
-          { label: 'Profile', color: 'bg-blue-600', action: () => navigate('/profile') },
-        ].map((item) => (
-          <button
-            key={item.label}
-            onClick={item.action}
-            className={`min-w-[100px] h-[130px] rounded-xl ${item.color} flex items-end p-3 flex-shrink-0 text-left`}
-          >
-            <span className="text-white text-xs font-bold">{item.label}</span>
-          </button>
-        ))}
-      </div>
-
+      {/* Feed */}
       <div className="px-3 py-2 space-y-3">
-        {loading && <p className="text-center text-gray-500 py-6">Loading feed...</p>}
+        <h2 className="text-sm font-bold text-zinc-300 px-1 pt-1">Campus Feed</h2>
+
+        {loading && <p className="text-center text-zinc-500 py-6">Loading feed...</p>}
         {!loading && posts.length === 0 && (
-          <p className="text-center text-gray-500 py-6">No posts yet. Be the first to share!</p>
+          <p className="text-center text-zinc-500 py-6">No posts yet. Be the first to share!</p>
         )}
 
         {posts.map((post) => {
@@ -761,25 +792,27 @@ export default function Home() {
           const postAvatar = avatarFor(post.user_id);
 
           return (
-            <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden relative">
+            <div key={post.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden relative shadow-lg">
               <div className="flex items-center justify-between px-4 py-3">
                 <button
                   onClick={() => navigate(`/profile/${post.user_id}`)}
                   className="flex items-center gap-3 text-left"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold overflow-hidden">
-                    {postAvatar ? (
-                      <img src={postAvatar} alt={nameFor(post.user_id)} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      nameFor(post.user_id).charAt(0).toUpperCase()
-                    )}
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-orange-400 p-[2px]">
+                    <div className="w-full h-full rounded-full bg-zinc-800 flex items-center justify-center font-bold overflow-hidden">
+                      {postAvatar ? (
+                        <img src={postAvatar} alt={nameFor(post.user_id)} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        nameFor(post.user_id).charAt(0).toUpperCase()
+                      )}
+                    </div>
                   </div>
                   <div>
                     <p className="font-semibold text-sm">{nameFor(post.user_id)}</p>
-                    <p className="text-xs text-gray-500">{new Date(post.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-zinc-500">{new Date(post.created_at).toLocaleString()}</p>
                   </div>
                 </button>
-                <button onClick={() => setOpenPostMenu(post.id)} className="text-gray-400 p-1">
+                <button onClick={() => setOpenPostMenu(post.id)} className="text-zinc-400 p-1">
                   <MoreVertical size={18} />
                 </button>
               </div>
@@ -802,7 +835,7 @@ export default function Home() {
               {total > 0 && (
                 <button
                   onClick={() => toggleReactorsList(post.id)}
-                  className="w-full flex items-center justify-between px-4 py-2 text-sm text-gray-400 border-t border-gray-700 mt-1"
+                  className="w-full flex items-center justify-between px-4 py-2 text-sm text-zinc-400 border-t border-zinc-800 mt-1"
                 >
                   <div className="flex items-center gap-1">
                     <div className="flex -space-x-1">
@@ -810,14 +843,14 @@ export default function Home() {
                         <span key={type} className="text-sm">{reactionEmoji(type)}</span>
                       ))}
                     </div>
-                    <span className="ml-1 underline decoration-gray-600">{total}</span>
+                    <span className="ml-1 underline decoration-zinc-700">{total}</span>
                   </div>
                   <span>{commentCount} comments</span>
                 </button>
               )}
 
               {isPickerOpen && (
-                <div className="absolute bottom-16 left-4 bg-gray-900 border border-gray-700 rounded-full flex gap-1 px-2 py-1.5 shadow-lg z-10">
+                <div className="absolute bottom-16 left-4 bg-zinc-800 border border-zinc-700 rounded-full flex gap-1 px-2 py-1.5 shadow-xl z-10">
                   {REACTIONS.map((r) => (
                     <button key={r.type} onClick={() => setPostReaction(post.id, r.type)} className="text-2xl active:scale-125 transition-transform">
                       {r.emoji}
@@ -826,27 +859,27 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="flex border-t border-gray-700">
+              <div className="flex border-t border-zinc-800">
                 <button
                   onTouchStart={() => handleLikePressStart(post.id)}
                   onTouchEnd={() => handleLikeTouchEnd(post.id)}
                   onMouseDown={() => handleLikeMouseStart(post.id)}
                   onMouseUp={() => handleLikeMouseEnd(post.id)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium active:bg-gray-700 transition-colors ${myReaction ? 'text-blue-500' : 'text-gray-400'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium active:bg-zinc-800 transition-colors ${myReaction ? 'text-fuchsia-400' : 'text-zinc-400'}`}
                 >
                   {myReaction ? <span className="text-base">{reactionEmoji(myReaction)}</span> : <ThumbsUp size={18} />}
                   {myReaction ? reactionLabel(myReaction) : 'Like'}
                 </button>
                 <button
                   onClick={() => toggleCommentBox(post.id)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 text-sm font-medium active:bg-gray-700 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 py-2 text-zinc-400 text-sm font-medium active:bg-zinc-800 transition-colors"
                 >
                   <MessageCircle size={18} />
                   Comment
                 </button>
                 <button
                   onClick={() => handleShare(post)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 text-sm font-medium active:bg-gray-700 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 py-2 text-zinc-400 text-sm font-medium active:bg-zinc-800 transition-colors"
                 >
                   <Share2 size={18} />
                   Share
@@ -854,10 +887,10 @@ export default function Home() {
               </div>
 
               {isCommentOpen && (
-                <div className="border-t border-gray-700 px-4 py-3">
+                <div className="border-t border-zinc-800 px-4 py-3">
                   <div className="space-y-3 mb-3 max-h-72 overflow-y-auto">
                     {topLevelComments.length === 0 && (
-                      <p className="text-xs text-gray-500">No comments yet. Say something!</p>
+                      <p className="text-xs text-zinc-500">No comments yet. Say something!</p>
                     )}
                     {topLevelComments.map((c) => {
                       const myCReaction = myCommentReactions[c.id];
@@ -872,31 +905,31 @@ export default function Home() {
                       return (
                         <div key={c.id}>
                           <div className="relative">
-                            <div className="bg-gray-700 rounded-lg px-3 py-2 flex justify-between items-start gap-2">
+                            <div className="bg-zinc-800 rounded-xl px-3 py-2 flex justify-between items-start gap-2">
                               <div>
-                                <p className="text-xs text-gray-400 mb-0.5">{nameFor(c.user_id)}</p>
+                                <p className="text-xs text-zinc-400 mb-0.5">{nameFor(c.user_id)}</p>
                                 <p className="text-sm">{c.content}</p>
                               </div>
                               <div className="relative flex-shrink-0">
                                 <button
                                   onClick={() => setOpenCommentMenu(isCMenuOpen ? null : c.id)}
-                                  className="text-gray-500"
+                                  className="text-zinc-500"
                                 >
                                   <MoreVertical size={14} />
                                 </button>
                                 {isCMenuOpen && (
-                                  <div className="absolute right-0 top-6 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-20 min-w-[120px] overflow-hidden">
+                                  <div className="absolute right-0 top-6 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-20 min-w-[120px] overflow-hidden">
                                     {isCommentOwner ? (
                                       <button
                                         onClick={() => deleteComment(post.id, c.id)}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-gray-800"
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-zinc-800"
                                       >
                                         <Trash2 size={13} /> Delete
                                       </button>
                                     ) : (
                                       <button
                                         onClick={() => setOpenCommentMenu(null)}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800"
+                                        className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800"
                                       >
                                         Report
                                       </button>
@@ -911,18 +944,18 @@ export default function Home() {
                                 onTouchEnd={() => handleCommentLikeTouchEnd(c.id)}
                                 onMouseDown={() => handleCommentLikeMouseStart(c.id)}
                                 onMouseUp={() => handleCommentLikeMouseEnd(c.id)}
-                                className={`text-xs font-semibold ${myCReaction ? 'text-blue-500' : 'text-gray-400'}`}
+                                className={`text-xs font-semibold ${myCReaction ? 'text-fuchsia-400' : 'text-zinc-400'}`}
                               >
                                 {myCReaction ? reactionEmoji(myCReaction) + ' ' + reactionLabel(myCReaction) : 'Like'}
                               </button>
                               <button
                                 onClick={() => { setReplyingToCommentId(c.id); setReplyText(''); }}
-                                className="text-xs font-semibold text-gray-400"
+                                className="text-xs font-semibold text-zinc-400"
                               >
                                 Reply
                               </button>
                               {cTotal > 0 && (
-                                <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                                <span className="text-xs text-zinc-500 flex items-center gap-0.5">
                                   {cTopTypes.map((t) => <span key={t}>{reactionEmoji(t)}</span>)}
                                   {cTotal}
                                 </span>
@@ -930,7 +963,7 @@ export default function Home() {
                             </div>
 
                             {isCPickerOpen && (
-                              <div className="absolute -top-10 left-2 bg-gray-900 border border-gray-700 rounded-full flex gap-1 px-2 py-1 shadow-lg z-10">
+                              <div className="absolute -top-10 left-2 bg-zinc-800 border border-zinc-700 rounded-full flex gap-1 px-2 py-1 shadow-xl z-10">
                                 {REACTIONS.map((r) => (
                                   <button key={r.type} onClick={() => setCommentReaction(c.id, r.type)} className="text-lg active:scale-125 transition-transform">
                                     {r.emoji}
@@ -946,23 +979,23 @@ export default function Home() {
                                 const isReplyOwner = r.user_id === currentUserId;
                                 const isRMenuOpen = openCommentMenu === r.id;
                                 return (
-                                  <div key={r.id} className="bg-gray-700/60 rounded-lg px-3 py-2 flex justify-between items-start gap-2">
+                                  <div key={r.id} className="bg-zinc-800/60 rounded-xl px-3 py-2 flex justify-between items-start gap-2">
                                     <div>
-                                      <p className="text-xs text-gray-400 mb-0.5">{nameFor(r.user_id)}</p>
+                                      <p className="text-xs text-zinc-400 mb-0.5">{nameFor(r.user_id)}</p>
                                       <p className="text-sm">{r.content}</p>
                                     </div>
                                     <div className="relative flex-shrink-0">
                                       <button
                                         onClick={() => setOpenCommentMenu(isRMenuOpen ? null : r.id)}
-                                        className="text-gray-500"
+                                        className="text-zinc-500"
                                       >
                                         <MoreVertical size={14} />
                                       </button>
                                       {isRMenuOpen && isReplyOwner && (
-                                        <div className="absolute right-0 top-6 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-20 min-w-[120px] overflow-hidden">
+                                        <div className="absolute right-0 top-6 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-20 min-w-[120px] overflow-hidden">
                                           <button
                                             onClick={() => deleteComment(post.id, r.id)}
-                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-gray-800"
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-zinc-800"
                                           >
                                             <Trash2 size={13} /> Delete
                                           </button>
@@ -982,9 +1015,9 @@ export default function Home() {
                                 value={replyText}
                                 onChange={(e) => setReplyText(e.target.value)}
                                 placeholder={`Reply to ${nameFor(c.user_id)}...`}
-                                className="flex-1 bg-gray-700 rounded-full px-3 py-1.5 text-sm outline-none"
+                                className="flex-1 bg-zinc-800 rounded-full px-3 py-1.5 text-sm outline-none"
                               />
-                              <button onClick={() => submitReply(post.id, c.id)} className="text-blue-500 text-sm font-semibold px-2">
+                              <button onClick={() => submitReply(post.id, c.id)} className="text-fuchsia-400 text-sm font-semibold px-2">
                                 Send
                               </button>
                             </div>
@@ -999,9 +1032,9 @@ export default function Home() {
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       placeholder="Write a comment..."
-                      className="flex-1 bg-gray-700 rounded-full px-3 py-1.5 text-sm outline-none"
+                      className="flex-1 bg-zinc-800 rounded-full px-3 py-1.5 text-sm outline-none"
                     />
-                    <button onClick={() => submitComment(post.id)} className="text-blue-500 text-sm font-semibold px-2">
+                    <button onClick={() => submitComment(post.id)} className="text-fuchsia-400 text-sm font-semibold px-2">
                       Send
                     </button>
                   </div>
@@ -1015,14 +1048,14 @@ export default function Home() {
       {activeMenuPost && (
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpenPostMenu(null)} />
-          <div className="relative w-full bg-gray-900 rounded-t-2xl pb-6 pt-2">
-            <div className="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-2" />
+          <div className="relative w-full bg-zinc-900 rounded-t-3xl pb-6 pt-2 border-t border-zinc-800">
+            <div className="w-10 h-1 bg-zinc-700 rounded-full mx-auto mb-2" />
 
             <button onClick={handleSavePost} className="w-full flex items-center gap-4 px-5 py-3.5 text-left">
-              <Bookmark size={20} className="text-gray-300" />
+              <Bookmark size={20} className="text-zinc-300" />
               <div>
                 <p className="text-sm font-medium">Save post</p>
-                <p className="text-xs text-gray-500">Add this to your saved items</p>
+                <p className="text-xs text-zinc-500">Add this to your saved items</p>
               </div>
             </button>
 
@@ -1030,24 +1063,24 @@ export default function Home() {
               onClick={() => { setOpenPostMenu(null); handleShare(activeMenuPost); }}
               className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
             >
-              <Share2 size={20} className="text-gray-300" />
+              <Share2 size={20} className="text-zinc-300" />
               <p className="text-sm font-medium">Share</p>
             </button>
 
             <button onClick={() => handleCopyLink(activeMenuPost)} className="w-full flex items-center gap-4 px-5 py-3.5 text-left">
-              <LinkIcon size={20} className="text-gray-300" />
+              <LinkIcon size={20} className="text-zinc-300" />
               <p className="text-sm font-medium">Copy link</p>
             </button>
 
             <button onClick={handleTurnOnNotifications} className="w-full flex items-center gap-4 px-5 py-3.5 text-left">
-              <BellRing size={20} className="text-gray-300" />
+              <BellRing size={20} className="text-zinc-300" />
               <p className="text-sm font-medium">Turn on notifications for this post</p>
             </button>
 
             {activeMenuPost.user_id === currentUserId ? (
               <button
                 onClick={() => deletePost(activeMenuPost.id)}
-                className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-gray-800 mt-1"
+                className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-zinc-800 mt-1"
               >
                 <Trash2 size={20} className="text-red-400" />
                 <p className="text-sm font-medium text-red-400">Delete Post</p>
@@ -1055,7 +1088,7 @@ export default function Home() {
             ) : (
               <button
                 onClick={handleReportPost}
-                className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-gray-800 mt-1"
+                className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-zinc-800 mt-1"
               >
                 <Flag size={20} className="text-red-400" />
                 <p className="text-sm font-medium text-red-400">Report post</p>
@@ -1068,16 +1101,16 @@ export default function Home() {
       {openReactorsList && (
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpenReactorsList(null)} />
-          <div className="relative w-full bg-gray-900 rounded-t-2xl pb-6 pt-2 max-h-[70vh] flex flex-col">
-            <div className="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-3 flex-shrink-0" />
-            <h3 className="text-sm font-semibold text-gray-300 px-5 pb-2 flex-shrink-0">Reactions</h3>
+          <div className="relative w-full bg-zinc-900 rounded-t-3xl pb-6 pt-2 border-t border-zinc-800 max-h-[70vh] flex flex-col">
+            <div className="w-10 h-1 bg-zinc-700 rounded-full mx-auto mb-3 flex-shrink-0" />
+            <h3 className="text-sm font-semibold text-zinc-300 px-5 pb-2 flex-shrink-0">Reactions</h3>
             <div className="overflow-y-auto px-5 space-y-3">
               {reactorsList.length === 0 && (
-                <p className="text-xs text-gray-500 py-4">No reactions yet.</p>
+                <p className="text-xs text-zinc-500 py-4">No reactions yet.</p>
               )}
               {reactorsList.map((r, idx) => (
                 <div key={`${r.user_id}-${idx}`} className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center font-bold overflow-hidden flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center font-bold overflow-hidden flex-shrink-0">
                     {avatarFor(r.user_id) ? (
                       <img src={avatarFor(r.user_id)} alt={nameFor(r.user_id)} className="w-full h-full object-cover" />
                     ) : (
@@ -1096,52 +1129,28 @@ export default function Home() {
       {openNavMenu && (
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpenNavMenu(false)} />
-          <div className="relative w-full bg-gray-900 rounded-t-2xl pb-6 pt-2">
-            <div className="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-2" />
+          <div className="relative w-full bg-zinc-900 rounded-t-3xl pb-6 pt-2 border-t border-zinc-800">
+            <div className="w-10 h-1 bg-zinc-700 rounded-full mx-auto mb-2" />
 
             <button
               onClick={() => { setOpenNavMenu(false); navigate('/profile'); }}
               className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
             >
-              <User size={20} className="text-gray-300" />
+              <User size={20} className="text-zinc-300" />
               <p className="text-sm font-medium">Profile</p>
-            </button>
-
-            <button
-              onClick={() => { setOpenNavMenu(false); showToast('Errands coming soon!'); }}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
-            >
-              <Briefcase size={20} className="text-gray-300" />
-              <p className="text-sm font-medium">Errands</p>
-            </button>
-
-            <button
-              onClick={() => { setOpenNavMenu(false); showToast('Marketplace coming soon!'); }}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
-            >
-              <ShoppingBag size={20} className="text-gray-300" />
-              <p className="text-sm font-medium">Marketplace</p>
-            </button>
-
-            <button
-              onClick={() => { setOpenNavMenu(false); showToast('Wallet coming soon!'); }}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
-            >
-              <WalletIcon size={20} className="text-gray-300" />
-              <p className="text-sm font-medium">Wallet</p>
             </button>
 
             <button
               onClick={() => { setOpenNavMenu(false); showToast('Settings coming soon!'); }}
               className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
             >
-              <Settings size={20} className="text-gray-300" />
+              <Settings size={20} className="text-zinc-300" />
               <p className="text-sm font-medium">Settings</p>
             </button>
 
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-gray-800 mt-1"
+              className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-zinc-800 mt-1"
             >
               <LogOut size={20} className="text-red-400" />
               <p className="text-sm font-medium text-red-400">Log Out</p>
