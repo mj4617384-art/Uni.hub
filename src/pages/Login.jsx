@@ -39,9 +39,14 @@ export default function Login() {
       <div className="pointer-events-none absolute -bottom-32 -right-24 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl" />
 
       <div className="relative max-w-sm mx-auto w-full">
-        <h1 className="text-3xl font-extrabold text-center mb-1 bg-gradient-to-r from-fuchsia-400 via-violet-400 to-orange-300 bg-clip-text text-transparent">
-          Uni.hub
-        </h1>
+        <div className="flex flex-col items-center mb-1">
+  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-500 via-violet-500 to-orange-400 flex items-center justify-center mb-3">
+    <span className="text-lg font-extrabold text-white">U</span>
+  </div>
+  <h1 className="text-3xl font-extrabold bg-gradient-to-r from-fuchsia-400 via-violet-400 to-orange-300 bg-clip-text text-transparent">
+    Uni.hub
+  </h1>
+</div>
         <p className="text-zinc-400 text-center text-sm mb-8">
           Your campus. Your community. Everything in one place.
         </p>
