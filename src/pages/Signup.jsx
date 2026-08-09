@@ -140,14 +140,19 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex flex-col justify-center px-6 py-10 relative overflow-hidden">
-      <div className="pointer-events-none absolute -top-32 -right-24 w-72 h-72 bg-orange-500/20 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -left-24 w-80 h-80 bg-fuchsia-600/20 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-[#0A0A0D] text-white flex flex-col justify-center px-6 py-10 relative overflow-hidden">
+      <div className="pointer-events-none absolute -top-32 -right-24 w-72 h-72 bg-red-600/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -left-24 w-80 h-80 bg-red-700/10 rounded-full blur-3xl" />
 
       <div className="relative max-w-sm mx-auto w-full">
-        <h1 className="text-3xl font-extrabold text-center mb-1 bg-gradient-to-r from-fuchsia-400 via-violet-400 to-orange-300 bg-clip-text text-transparent">
-          Uni.hub
-        </h1>
+        <div className="flex flex-col items-center mb-1">
+          <div className="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center mb-3 shadow-lg shadow-red-900/40">
+            <span className="text-lg font-extrabold text-white">U</span>
+          </div>
+          <h1 className="text-3xl font-extrabold">
+            <span className="text-white">Uni</span><span className="text-red-500">.hub</span>
+          </h1>
+        </div>
         <p className="text-zinc-400 text-center text-sm mb-8">
           Your campus. Your community. Everything in one place.
         </p>
@@ -182,7 +187,7 @@ export default function Signup() {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder="First name"
-                      className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-3 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500 transition-colors"
+                      className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-3 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-red-600 transition-colors"
                     />
                   </div>
                 </div>
@@ -193,7 +198,7 @@ export default function Signup() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Last name"
-                    className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500 transition-colors mt-1"
+                    className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-red-600 transition-colors mt-1"
                   />
                 </div>
               </div>
@@ -207,7 +212,7 @@ export default function Signup() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@university.edu"
-                    className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500 transition-colors"
+                    className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-red-600 transition-colors"
                   />
                 </div>
               </div>
@@ -221,7 +226,7 @@ export default function Signup() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 6 characters"
-                    className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500 transition-colors"
+                    className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-red-600 transition-colors"
                   />
                   <button
                     type="button"
@@ -236,14 +241,14 @@ export default function Signup() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-fuchsia-500 to-orange-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl shadow-lg mt-2"
+                className="w-full bg-red-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl shadow-lg shadow-red-900/30 mt-2"
               >
                 {loading ? 'Please wait...' : 'Continue'}
               </button>
 
               <p className="text-center text-sm text-zinc-500 mt-4">
                 Already have an account?{' '}
-                <a href="/login" className="text-fuchsia-400 font-semibold">Log in</a>
+                <a href="/login" className="text-red-500 font-semibold">Log in</a>
               </p>
             </form>
           )}
@@ -258,7 +263,7 @@ export default function Signup() {
                   maxLength={6}
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white text-center text-2xl tracking-widest placeholder-zinc-500 outline-none focus:border-fuchsia-500 transition-colors"
+                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white text-center text-2xl tracking-widest placeholder-zinc-500 outline-none focus:border-red-600 transition-colors"
                   placeholder="000000"
                 />
               </div>
@@ -266,7 +271,7 @@ export default function Signup() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-fuchsia-500 to-orange-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl shadow-lg mt-2"
+                className="w-full bg-red-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl shadow-lg shadow-red-900/30 mt-2"
               >
                 {loading ? 'Verifying...' : 'Verify'}
               </button>
@@ -280,7 +285,7 @@ export default function Signup() {
                 <select
                   value={faculty}
                   onChange={(e) => { setFaculty(e.target.value); setDepartment(''); }}
-                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white outline-none focus:border-fuchsia-500 transition-colors"
+                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white outline-none focus:border-red-600 transition-colors"
                 >
                   <option value="">Select faculty</option>
                   {Object.keys(FACULTY_DEPARTMENTS).map((f) => (
@@ -295,7 +300,7 @@ export default function Signup() {
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
                   disabled={!faculty}
-                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white outline-none disabled:opacity-50 focus:border-fuchsia-500 transition-colors"
+                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white outline-none disabled:opacity-50 focus:border-red-600 transition-colors"
                 >
                   <option value="">Select department</option>
                   {(FACULTY_DEPARTMENTS[faculty] || []).map((d) => (
@@ -309,7 +314,7 @@ export default function Signup() {
                 <select
                   value={level}
                   onChange={(e) => setLevel(e.target.value)}
-                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white outline-none focus:border-fuchsia-500 transition-colors"
+                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white outline-none focus:border-red-600 transition-colors"
                 >
                   <option value="">Select level</option>
                   {LEVELS.map((l) => (
@@ -324,7 +329,7 @@ export default function Signup() {
                   type="date"
                   value={dateOfBirth}
                   onChange={(e) => setDateOfBirth(e.target.value)}
-                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white outline-none focus:border-fuchsia-500 transition-colors"
+                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white outline-none focus:border-red-600 transition-colors"
                 />
               </div>
 
@@ -334,14 +339,14 @@ export default function Signup() {
                   <button
                     type="button"
                     onClick={() => setResidenceType('on_campus')}
-                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${residenceType === 'on_campus' ? 'bg-gradient-to-r from-fuchsia-500 to-orange-400 text-white' : 'bg-zinc-800/70 border border-zinc-700 text-zinc-400'}`}
+                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${residenceType === 'on_campus' ? 'bg-red-600 text-white' : 'bg-zinc-800/70 border border-zinc-700 text-zinc-400'}`}
                   >
                     On Campus
                   </button>
                   <button
                     type="button"
                     onClick={() => setResidenceType('off_campus')}
-                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${residenceType === 'off_campus' ? 'bg-gradient-to-r from-fuchsia-500 to-orange-400 text-white' : 'bg-zinc-800/70 border border-zinc-700 text-zinc-400'}`}
+                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${residenceType === 'off_campus' ? 'bg-red-600 text-white' : 'bg-zinc-800/70 border border-zinc-700 text-zinc-400'}`}
                   >
                     Off Campus
                   </button>
@@ -356,7 +361,7 @@ export default function Signup() {
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500 transition-colors"
+                  className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-3 mt-1 text-white placeholder-zinc-500 outline-none focus:border-red-600 transition-colors"
                   placeholder={residenceType === 'on_campus' ? 'e.g. Block A, Room 12' : 'e.g. No 2 Lucy Alour Street'}
                 />
               </div>
@@ -364,7 +369,7 @@ export default function Signup() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-fuchsia-500 to-orange-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl shadow-lg mt-2"
+                className="w-full bg-red-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl shadow-lg shadow-red-900/30 mt-2"
               >
                 {loading ? 'Finishing up...' : 'Finish Signup'}
               </button>
