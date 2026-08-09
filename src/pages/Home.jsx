@@ -657,7 +657,7 @@ export default function Home() {
           <button className="p-2" onClick={() => showToast('Messaging coming soon!')}>
             <MessageCircle size={22} className="text-zinc-400" />
           </button>
-          <button onClick={() => setOpenNavMenu(true)} className="p-2">
+          <button className="p-2" onClick={() => navigate('/menu')}>
             <Menu size={22} className="text-zinc-400" />
           </button>
         </div>
@@ -1122,39 +1122,6 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      )}
-
-      {openNavMenu && (
-        <div className="fixed inset-0 z-50 flex items-end">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpenNavMenu(false)} />
-          <div className="relative w-full bg-zinc-900 rounded-t-3xl pb-6 pt-2 border-t border-zinc-800">
-            <div className="w-10 h-1 bg-zinc-700 rounded-full mx-auto mb-2" />
-
-            <button
-              onClick={() => { setOpenNavMenu(false); navigate('/profile'); }}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
-            >
-              <User size={20} className="text-zinc-300" />
-              <p className="text-sm font-medium">Profile</p>
-            </button>
-
-            <button
-              onClick={() => { setOpenNavMenu(false); showToast('Settings coming soon!'); }}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
-            >
-              <Settings size={20} className="text-zinc-300" />
-              <p className="text-sm font-medium">Settings</p>
-            </button>
-
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-4 px-5 py-3.5 text-left border-t border-zinc-800 mt-1"
-            >
-              <LogOut size={20} className="text-red-400" />
-              <p className="text-sm font-medium text-red-400">Log Out</p>
-            </button>
           </div>
         </div>
       )}
