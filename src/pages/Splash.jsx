@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+      import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -41,13 +41,13 @@ export default function Splash() {
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes softGlow {
-          0%, 100% { filter: drop-shadow(0 0 0px rgba(217,70,239,0.4)); }
-          50% { filter: drop-shadow(0 0 18px rgba(217,70,239,0.55)); }
+          0%, 100% { filter: drop-shadow(0 0 0px rgba(220,38,38,0.4)); }
+          50% { filter: drop-shadow(0 0 18px rgba(220,38,38,0.55)); }
         }
       `}</style>
 
-      <div className="pointer-events-none absolute -top-32 -left-24 w-72 h-72 bg-fuchsia-600/20 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -right-24 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -top-32 -left-24 w-72 h-72 bg-red-600/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -right-24 w-80 h-80 bg-red-700/10 rounded-full blur-3xl" />
 
       <div
         className="relative flex flex-col items-center"
@@ -57,14 +57,14 @@ export default function Splash() {
         }}
       >
         <div
-          className="w-16 h-16 rounded-2xl bg-gradient-to-br from-fuchsia-500 via-violet-500 to-orange-400 flex items-center justify-center mb-4"
+          className="w-16 h-16 rounded-2xl bg-red-600 flex items-center justify-center mb-4"
           style={{ animation: glow ? 'softGlow 1.6s ease-in-out infinite' : 'none' }}
         >
           <span className="text-2xl font-extrabold text-white">U</span>
         </div>
 
-        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-fuchsia-400 via-violet-400 to-orange-300 bg-clip-text text-transparent mb-2">
-          Uni.hub
+        <h1 className="text-3xl font-extrabold mb-2">
+          <span className="text-white">Uni</span><span className="text-red-500">.hub</span>
         </h1>
         <p className="text-zinc-400 text-sm text-center max-w-[220px] leading-relaxed">
           Your campus. Your community. Everything in one place.
@@ -72,10 +72,10 @@ export default function Splash() {
 
         <div className="h-10 flex items-center justify-center mt-6">
           {showLoader && (
-            <div className="w-6 h-6 rounded-full border-2 border-zinc-700 border-t-fuchsia-400 animate-spin" />
+            <div className="w-6 h-6 rounded-full border-2 border-zinc-700 border-t-red-500 animate-spin" />
           )}
         </div>
       </div>
     </div>
   );
-}
+}  
