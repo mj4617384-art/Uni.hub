@@ -37,12 +37,19 @@ const REACTIONS = [
 const POSTS_PER_PAGE = 30;
 const LONG_PRESS_MS = 400;
 const TOUCH_GUARD_MS = 800;
+const CAMPUS_PHOTO_URL = 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80';
 
 function reactionEmoji(type) {
   return REACTIONS.find((r) => r.type === type)?.emoji || '👍';
 }
 function reactionLabel(type) {
   return REACTIONS.find((r) => r.type === type)?.label || 'Like';
+}
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
 export default function Home() {
@@ -58,6 +65,7 @@ export default function Home() {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [profiles, setProfiles] = useState({});
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
+  const [myFirstName, setMyFirstName] = useState('');
   const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -132,11 +140,12 @@ export default function Home() {
       setCurrentUserId(user.id);
       const { data: profile } = await supabase
         .from('profiles')
-        .select('avatar_url, phone_number, date_of_birth, house_location, faculty, department, level')
+        .select('avatar_url, first_name, display_name, phone_number, date_of_birth, house_location, faculty, department, level')
         .eq('id', user.id)
         .single();
       if (profile) {
         setMyAvatarUrl(profile.avatar_url);
+        setMyFirstName(profile.first_name || (profile.display_name || '').split(' ')[0] || 'there');
         const incomplete = !profile.phone_number || !profile.date_of_birth || !profile.house_location || !profile.faculty || !profile.department || !profile.level;
         setProfileIncomplete(incomplete);
       }
@@ -632,7 +641,7 @@ export default function Home() {
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <h1 className="text-2xl font-extrabold">
-          <span className="text-white">Uni</span><span className="text-red-500">.hub</span>
+          <span className="text-white">Uni</span><span className="text-blue-500">.hub</span>
         </h1>
         <div className="flex items-center gap-3">
           <button
@@ -646,7 +655,7 @@ export default function Home() {
             onClick={() => showToast('Notifications coming soon!')}
           >
             <Bell size={22} className="text-zinc-400" />
-            <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute top-1 right-1 bg-blue-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
               3
             </span>
           </button>
@@ -659,12 +668,22 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Greeting banner with campus photo */}
+      <div className="mx-3 mt-3 rounded-2xl overflow-hidden relative shadow-lg">
+        <img src={CAMPUS_PHOTO_URL} alt="Campus" className="w-full h-32 object-cover" loading="lazy" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-950/90 via-blue-950/60 to-transparent" />
+        <div className="absolute inset-0 flex flex-col justify-center px-4">
+          <p className="text-lg font-bold text-white">{getGreeting()}, {myFirstName || 'there'} 👋</p>
+          <p className="text-xs text-blue-100">Here's what's happening around your campus.</p>
+        </div>
+      </div>
+
       {profileIncomplete && (
-        <div className="mx-3 mt-3 bg-red-950/40 border border-red-800/60 rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 shadow-lg">
-          <p className="text-xs text-red-300">Complete your profile to unlock all features</p>
+        <div className="mx-3 mt-3 bg-blue-950/40 border border-blue-800/60 rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 shadow-lg">
+          <p className="text-xs text-blue-300">Complete your profile to unlock all features</p>
           <button
             onClick={() => navigate('/profile')}
-            className="text-xs font-semibold bg-red-600 text-white px-3 py-1 rounded-full flex-shrink-0"
+            className="text-xs font-semibold bg-blue-600 text-white px-3 py-1 rounded-full flex-shrink-0"
           >
             Complete
           </button>
@@ -683,7 +702,7 @@ export default function Home() {
                 onClick={s.action}
                 className="flex flex-col items-center justify-center gap-2 py-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-md active:scale-95 transition-transform"
               >
-                <div className="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
                   <Icon size={19} className="text-white" />
                 </div>
                 <span className="text-xs font-semibold text-zinc-200">{s.label}</span>
@@ -696,7 +715,7 @@ export default function Home() {
       {/* Trending strip */}
       <div className="px-3 py-2">
         <div className="flex items-center gap-2 mb-2 px-1">
-          <Flame size={15} className="text-red-500" />
+          <Flame size={15} className="text-blue-500" />
           <h2 className="text-sm font-bold text-zinc-300">Trending on Campus</h2>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -715,7 +734,7 @@ export default function Home() {
       {/* Composer bar */}
       <div className="mx-3 mt-2 mb-1 p-3 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-md">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-full bg-red-600 p-[2px] flex-shrink-0">
+          <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-full bg-blue-600 p-[2px] flex-shrink-0">
             <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800">
               {myAvatarUrl ? (
                 <img src={myAvatarUrl} alt="me" className="w-full h-full object-cover" loading="lazy" />
@@ -734,7 +753,7 @@ export default function Home() {
         </div>
 
         <div className="mt-2 ml-[52px]">
-          <label className="inline-flex items-center gap-1.5 text-red-500 text-sm font-semibold cursor-pointer">
+          <label className="inline-flex items-center gap-1.5 text-blue-500 text-sm font-semibold cursor-pointer">
             <Camera size={16} className="flex-shrink-0" />
             <span className="whitespace-nowrap">Photo/Video</span>
             <input type="file" accept="image/*,video/*" onChange={handleFileSelect} className="hidden" />
@@ -758,7 +777,7 @@ export default function Home() {
           <button
             onClick={handlePost}
             disabled={uploading}
-            className="mt-3 w-full bg-red-600 disabled:opacity-50 text-white font-semibold py-2 rounded-xl shadow-md"
+            className="mt-3 w-full bg-blue-600 disabled:opacity-50 text-white font-semibold py-2 rounded-xl shadow-md"
           >
             {uploading ? 'Posting...' : 'Post'}
           </button>
@@ -794,7 +813,7 @@ export default function Home() {
                   onClick={() => navigate(`/profile/${post.user_id}`)}
                   className="flex items-center gap-3 text-left"
                 >
-                  <div className="w-10 h-10 rounded-full bg-red-600 p-[2px]">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 p-[2px]">
                     <div className="w-full h-full rounded-full bg-zinc-800 flex items-center justify-center font-bold overflow-hidden">
                       {postAvatar ? (
                         <img src={postAvatar} alt={nameFor(post.user_id)} className="w-full h-full object-cover" loading="lazy" />
@@ -861,7 +880,7 @@ export default function Home() {
                   onTouchEnd={() => handleLikeTouchEnd(post.id)}
                   onMouseDown={() => handleLikeMouseStart(post.id)}
                   onMouseUp={() => handleLikeMouseEnd(post.id)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium active:bg-zinc-800 transition-colors ${myReaction ? 'text-red-500' : 'text-zinc-400'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium active:bg-zinc-800 transition-colors ${myReaction ? 'text-blue-500' : 'text-zinc-400'}`}
                 >
                   {myReaction ? <span className="text-base">{reactionEmoji(myReaction)}</span> : <ThumbsUp size={18} />}
                   {myReaction ? reactionLabel(myReaction) : 'Like'}
@@ -940,7 +959,7 @@ export default function Home() {
                                 onTouchEnd={() => handleCommentLikeTouchEnd(c.id)}
                                 onMouseDown={() => handleCommentLikeMouseStart(c.id)}
                                 onMouseUp={() => handleCommentLikeMouseEnd(c.id)}
-                                className={`text-xs font-semibold ${myCReaction ? 'text-red-500' : 'text-zinc-400'}`}
+                                className={`text-xs font-semibold ${myCReaction ? 'text-blue-500' : 'text-zinc-400'}`}
                               >
                                 {myCReaction ? reactionEmoji(myCReaction) + ' ' + reactionLabel(myCReaction) : 'Like'}
                               </button>
@@ -1013,7 +1032,7 @@ export default function Home() {
                                 placeholder={`Reply to ${nameFor(c.user_id)}...`}
                                 className="flex-1 bg-zinc-800 rounded-full px-3 py-1.5 text-sm outline-none"
                               />
-                              <button onClick={() => submitReply(post.id, c.id)} className="text-red-500 text-sm font-semibold px-2">
+                              <button onClick={() => submitReply(post.id, c.id)} className="text-blue-500 text-sm font-semibold px-2">
                                 Send
                               </button>
                             </div>
@@ -1030,7 +1049,7 @@ export default function Home() {
                       placeholder="Write a comment..."
                       className="flex-1 bg-zinc-800 rounded-full px-3 py-1.5 text-sm outline-none"
                     />
-                    <button onClick={() => submitComment(post.id)} className="text-red-500 text-sm font-semibold px-2">
+                    <button onClick={() => submitComment(post.id)} className="text-blue-500 text-sm font-semibold px-2">
                       Send
                     </button>
                   </div>
@@ -1123,4 +1142,4 @@ export default function Home() {
       )}
     </div>
   );
-}
+   }
