@@ -93,12 +93,11 @@ export default function Menu() {
         </button>
       </div>
 
-      {/* User card */}
       <button
         onClick={() => navigate('/profile')}
         className="w-full flex items-center gap-3 px-4 py-4 mt-2"
       >
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-600 to-red-400 p-[2px] flex-shrink-0">
+        <div className="w-14 h-14 rounded-full bg-red-600 p-[2px] flex-shrink-0">
           <div className="w-full h-full rounded-full bg-zinc-800 overflow-hidden flex items-center justify-center font-bold text-lg">
             {avatarUrl ? (
               <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
@@ -114,7 +113,6 @@ export default function Menu() {
         </div>
       </button>
 
-      {/* Main items */}
       <div className="mt-3 border-t border-zinc-900">
         {items.map((item) => {
           const Icon = item.icon;
@@ -137,7 +135,6 @@ export default function Menu() {
         })}
       </div>
 
-      {/* Support items */}
       <div className="mt-3 border-t border-zinc-900">
         {supportItems.map((item) => {
           const Icon = item.icon;
@@ -155,7 +152,6 @@ export default function Menu() {
         })}
       </div>
 
-      {/* Log out */}
       <div className="mt-3">
         <button
           onClick={handleLogout}
@@ -166,10 +162,8 @@ export default function Menu() {
         </button>
       </div>
 
-      {/* Bottom tab bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0D] border-t border-zinc-900 flex items-center justify-around py-2">
         <button onClick={() => navigate('/home')} className="flex flex-col items-center gap-0.5 text-zinc-500">
-          <User size={20} className="rotate-0" style={{ display: 'none' }} />
           <span className="text-[10px]">Home</span>
         </button>
         <button className="flex flex-col items-center gap-0.5 text-zinc-500">
