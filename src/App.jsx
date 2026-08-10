@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Menu from './pages/Menu';
+import Discover from './pages/Discover';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/menu" element={<Menu />} />
+        <Route path="/discover" element={<Discover />} />
       </Routes>
     </BrowserRouter>
   );
